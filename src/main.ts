@@ -1,9 +1,11 @@
 import { NestFactory } from '@nestjs/core'
-import { ValidationPipe } from '@nestjs/common'
+import { Logger, ValidationPipe } from '@nestjs/common'
 import AppModule from './app.module'
 
 async function bootstrap() {
+  const logger = new Logger()
   const app = await NestFactory.create(AppModule)
+  app.enableCors({ origin: process.env.CORS_ALLOWED_ORIGIN ?? false })
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -14,7 +16,7 @@ async function bootstrap() {
   app.setGlobalPrefix('api')
 
   await app.listen(process.env.APP_PORT || 3000, async () =>
-    console.info('Application running at ', await app.getUrl()),
+    logger.verbose(`Application running at: ${await app.getUrl()}`),
   )
 }
 
