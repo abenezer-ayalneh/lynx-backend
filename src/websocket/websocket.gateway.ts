@@ -45,11 +45,7 @@ export default class WebsocketGateway
       // client.broadcast.emit('send-audio', newData)
 
       Object.entries(this.clientsStatus).forEach(([key, clientStatus]) => {
-        if (
-          key !== client.id &&
-          !clientStatus[0]?.mute &&
-          clientStatus[0]?.online
-        ) {
+        if (key !== client.id && !clientStatus?.mute && clientStatus?.online) {
           this.websocketService.socket.to(key).emit('send-audio', newData)
         }
       })
