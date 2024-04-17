@@ -30,6 +30,7 @@ export default class WebsocketGateway
   }
 
   async handleConnection(client: Socket<DefaultEventsMap, DefaultEventsMap>) {
+    this.logger.verbose(`Connected Device: ${client.id}`)
     this.clientsStatus[client.id] = {
       username: '',
       mute: false,
@@ -52,12 +53,13 @@ export default class WebsocketGateway
     })
 
     client.on('user-information', (data) => {
+      this.logger.log({ data })
       this.clientsStatus[client.id] = data
-      // client.broadcast.emit('update-users', this.clientsStatus)
       this.websocketService.socket.emit('update-users', this.clientsStatus)
     })
 
     client.on('disconnect', () => {
+      this.logger.verbose(`Disconnected Device: ${client.id}`)
       this.websocketService.socket.emit(
         'remove-user',
         this.clientsStatus[client.id],
