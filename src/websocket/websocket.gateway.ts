@@ -19,7 +19,7 @@ export default class WebsocketGateway
 {
   logger: Logger
 
-  clientsStatus: SocketUserStatusType | undefined = {}
+  connectedUsers: SocketUserStatusType | undefined = {}
 
   constructor(private readonly websocketService: WebsocketService) {
     this.logger = new Logger()
@@ -31,7 +31,7 @@ export default class WebsocketGateway
 
   async handleConnection(client: Socket<DefaultEventsMap, DefaultEventsMap>) {
     this.logger.verbose(`Connected Device: ${client.id}`)
-    this.clientsStatus[client.id] = {
+    this.connectedUsers[client.id] = {
       username: '',
       mute: false,
       online: false,
@@ -44,27 +44,28 @@ export default class WebsocketGateway
       const newData = splitData[0] + splitData[1]
 
       // client.broadcast.emit('send-audio', newData)
-
-      Object.entries(this.clientsStatus).forEach(([key, clientStatus]) => {
+      Object.entries(this.connectedUsers).forEach(([key, clientStatus]) => {
         if (key !== client.id && !clientStatus?.mute && clientStatus?.online) {
-          this.websocketService.socket.to(key).emit('send-audio', newData)
+          client.to(key).emit('send-audio', newData)
         }
       })
     })
 
+    // Update the client information by the newly sent data
     client.on('user-information', (data) => {
-      this.logger.log({ data })
-      this.clientsStatus[client.id] = data
-      this.websocketService.socket.emit('update-users', this.clientsStatus)
+      this.logger.debug({ data })
+      this.connectedUsers[client.id] = data
+      this.websocketService.socket.emit('update-users', this.connectedUsers)
     })
 
+    // Remove the client from the client list and emit remove-user event
     client.on('disconnect', () => {
       this.logger.verbose(`Disconnected Device: ${client.id}`)
       this.websocketService.socket.emit(
         'remove-user',
-        this.clientsStatus[client.id],
+        this.connectedUsers[client.id],
       )
-      delete this.clientsStatus[client.id]
+      delete this.connectedUsers[client.id]
     })
   }
 }
