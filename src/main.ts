@@ -1,14 +1,14 @@
 import { NestFactory } from '@nestjs/core'
-import { Logger, LogLevel, ValidationPipe } from '@nestjs/common'
+import { Logger, ValidationPipe } from '@nestjs/common'
+import { WinstonModule } from 'nest-winston'
 import AppModule from './app.module'
+import winstonLoggerInstance from './utils/log/winston.log'
 
 async function bootstrap() {
-  const logger = new Logger()
   const app = await NestFactory.create(AppModule, {
-    logger: (process.env.ALLOWED_LOG_LEVELS?.split(',') as LogLevel[]) ?? [
-      'log',
-    ],
+    logger: WinstonModule.createLogger({ instance: winstonLoggerInstance }),
   })
+  const logger = new Logger()
   app.enableCors({ origin: process.env.CORS_ALLOWED_ORIGIN ?? false })
   app.useGlobalPipes(
     new ValidationPipe({
