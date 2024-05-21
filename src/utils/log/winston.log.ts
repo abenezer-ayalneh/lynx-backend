@@ -5,7 +5,7 @@ import 'winston-daily-rotate-file'
 // For development environment
 const loggerOptions: LoggerOptions = {
   level: 'silly',
-  format: format.combine(format.errors({ stack: true }), format.metadata()),
+  format: format.combine(format.errors({ stack: true })),
   transports: [
     // - Write all logs to console when in development environment
     new transports.Console({

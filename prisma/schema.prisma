@@ -12,3 +12,54 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
+enum GameType {
+  SOLO
+  MULTIPLAYER
+}
+
+model Word {
+  id         Int       @id @default(autoincrement())
+  cue        String
+  word_1     String
+  word_2     String
+  word_3     String
+  word_4     String
+  word_5     String
+  status     Boolean   @default(true)
+  created_at DateTime  @default(now())
+  updated_at DateTime? @updatedAt()
+  deleted_at DateTime?
+
+  Games Game[]
+
+  @@map("words")
+}
+
+model Game {
+  id         Int       @id @default(autoincrement())
+  type       GameType
+  created_at DateTime  @default(now())
+  updated_at DateTime? @updatedAt()
+  deleted_at DateTime?
+
+  Words   Word[]
+  Players User[]
+
+  @@map("games")
+}
+
+model User {
+  id         Int       @id @default(autoincrement())
+  name       String
+  email      String
+  password   String
+  status     Boolean   @default(true)
+  created_at DateTime  @default(now())
+  updated_at DateTime? @updatedAt()
+  deleted_at DateTime?
+
+  Game Game[]
+
+  @@map("players")
+}

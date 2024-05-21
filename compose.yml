@@ -13,6 +13,15 @@ services:
     ports:
       - ${DATABASE_PORT}:5432
 
+  redis:
+    image: redis:7.2.5
+    container_name: lynx-redis
+    env_file:
+      - .env
+    restart: unless-stopped
+    ports:
+      - ${REDIS_PORT}:6379
+
 volumes:
   data:
     driver: local
