@@ -10,6 +10,8 @@ export default class RedisService {
     this.redisClient = new Redis({
       host: options.host,
       port: options.port,
+      username: options.username,
+      password: options.password,
     })
   }
 }
