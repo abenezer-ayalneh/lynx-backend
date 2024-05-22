@@ -2,6 +2,7 @@ import { Logger, Module } from '@nestjs/common'
 import { ConfigModule, ConfigService } from '@nestjs/config'
 import { CacheModule } from '@nestjs/cache-manager'
 import { redisStore } from 'cache-manager-redis-yet'
+import type { RedisClientOptions } from 'redis'
 import WebsocketGateway from './websocket/websocket.gateway'
 import WebsocketModule from './websocket/websocket.module'
 import AppController from './app.controller'
@@ -12,7 +13,7 @@ import PrismaModule from './prisma/prisma.module'
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
-    CacheModule.registerAsync({
+    CacheModule.registerAsync<RedisClientOptions>({
       isGlobal: true,
       imports: [ConfigModule],
       inject: [ConfigService],
