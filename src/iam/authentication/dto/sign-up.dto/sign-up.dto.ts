@@ -10,4 +10,7 @@ export default class SignUpDto {
 
   @MinLength(8)
   password: string
+
+  @MinLength(8)
+  confirmPassword: string
 }

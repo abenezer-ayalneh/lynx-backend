@@ -33,6 +33,9 @@ export default class AuthenticationService {
 
   async signUp(signUpDto: SignUpDto) {
     try {
+      if (signUpDto.password !== signUpDto.confirmPassword) {
+        throw Error('Password and confirm password mismatch')
+      }
       const password = await this.hashingService.hash(signUpDto.password)
       await this.prismaService.user.create({
         data: { email: signUpDto.email, password, name: signUpDto.name },
