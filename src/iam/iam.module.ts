@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common'
 import { JwtModule } from '@nestjs/jwt'
-import { ConfigModule, ConfigService } from '@nestjs/config'
+import { ConfigModule } from '@nestjs/config'
 import { APP_GUARD } from '@nestjs/core'
 import HashingService from './hashing/hashing.service'
 import BcryptService from './hashing/bcrypt.service'
@@ -10,21 +10,11 @@ import jwtConfig from './config/jwt.config'
 import AuthenticationGuard from './authentication/guards/authentication/authentication.guard'
 import AccessTokenGuard from './authentication/guards/access-token/access-token.guard'
 import RefreshTokenIdsStorage from './authentication/refresh-token-ids.storage/refresh-token-ids.storage'
-import RedisModule from '../redis/redis.module'
 
 @Module({
   imports: [
     JwtModule.registerAsync(jwtConfig.asProvider()),
     ConfigModule.forFeature(jwtConfig),
-    RedisModule.registerAsync({
-      inject: [ConfigService],
-      useFactory: (config: ConfigService) => ({
-        host: config.get('REDIS_HOST'),
-        port: config.get('REDIS_PORT'),
-        username: config.get('REDIS_USERNAME'),
-        password: config.get('REDIS_PASSWORD'),
-      }),
-    }),
   ],
   providers: [
     {

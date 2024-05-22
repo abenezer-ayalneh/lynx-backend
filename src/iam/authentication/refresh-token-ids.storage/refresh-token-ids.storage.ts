@@ -1,12 +1,13 @@
-import { Injectable, OnApplicationShutdown } from '@nestjs/common'
-import RedisService from '../../../redis/redis.service'
+import { Inject, Injectable, OnApplicationShutdown } from '@nestjs/common'
+import { CACHE_MANAGER } from '@nestjs/cache-manager'
+import { Cache } from 'cache-manager'
 
 @Injectable()
 export default class RefreshTokenIdsStorage implements OnApplicationShutdown {
-  constructor(private readonly redisService: RedisService) {}
+  constructor(@Inject(CACHE_MANAGER) private cacheManager: Cache) {}
 
   onApplicationShutdown(): any {
-    return this.redisService.redisClient.quit()
+    return this.cacheManager.reset()
   }
 
   private getKey(userId: number): string {
@@ -14,17 +15,15 @@ export default class RefreshTokenIdsStorage implements OnApplicationShutdown {
   }
 
   async insert(userId: number, tokenId: string): Promise<void> {
-    await this.redisService.redisClient.set(this.getKey(userId), tokenId)
+    await this.cacheManager.set(this.getKey(userId), tokenId)
   }
 
   async validate(userId: number, tokenId: string): Promise<boolean> {
-    const storedId = await this.redisService.redisClient.get(
-      this.getKey(userId),
-    )
+    const storedId = await this.cacheManager.get(this.getKey(userId))
     return storedId === tokenId
   }
 
   async invalidate(userId: number): Promise<void> {
-    await this.redisService.redisClient.del(this.getKey(userId))
+    await this.cacheManager.del(this.getKey(userId))
   }
 }
