@@ -21,6 +21,7 @@ import RedisModule from '../redis/redis.module'
       useFactory: (config: ConfigService) => ({
         host: config.get('REDIS_HOST'),
         port: config.get('REDIS_PORT'),
+        password: config.get('REDIS_PASSWORD'),
       }),
     }),
   ],
