@@ -7,8 +7,8 @@ import {
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library'
 import { JwtService } from '@nestjs/jwt'
 import { ConfigType } from '@nestjs/config'
-import { User } from '@prisma/client'
 import { randomUUID } from 'node:crypto'
+import { Player } from '@prisma/client'
 import PrismaService from '../../prisma/prisma.service'
 import HashingService from '../hashing/hashing.service'
 import SignUpDto from './dto/sign-up.dto/sign-up.dto'
@@ -37,7 +37,7 @@ export default class AuthenticationService {
         throw Error('Password and confirm password mismatch')
       }
       const password = await this.hashingService.hash(signUpDto.password)
-      await this.prismaService.user.create({
+      await this.prismaService.player.create({
         data: { email: signUpDto.email, password, name: signUpDto.name },
       })
     } catch (e) {
@@ -51,7 +51,7 @@ export default class AuthenticationService {
   }
 
   async signIn(signInDto: SignInDto) {
-    const user = await this.prismaService.user.findFirst({
+    const user = await this.prismaService.player.findFirst({
       where: { email: signInDto.email },
     })
     if (!user) {
@@ -69,7 +69,7 @@ export default class AuthenticationService {
     return this.generateTokens(user)
   }
 
-  async generateTokens(user: User) {
+  async generateTokens(user: Player) {
     const refreshTokenId = randomUUID()
     const [accessToken, refreshToken] = await Promise.all([
       this.signToken<Partial<ActiveUserData>>(
@@ -111,7 +111,7 @@ export default class AuthenticationService {
         audience: this.jwtConfiguration.audience,
         issuer: this.jwtConfiguration.issuer,
       })
-      const user = await this.prismaService.user.findFirstOrThrow({
+      const user = await this.prismaService.player.findFirstOrThrow({
         where: { id: sub },
       })
 

@@ -9,6 +9,7 @@ const loggerOptions: LoggerOptions = {
   transports: [
     // - Write all logs to console when in development environment
     new transports.Console({
+      level: 'silly',
       format: format.combine(
         format.timestamp(),
         format.ms(),

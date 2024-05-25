@@ -39,17 +39,19 @@ model Word {
 model Game {
   id         Int       @id @default(autoincrement())
   type       GameType
+  status     Boolean   @default(true)
+  owner_id   Int
   created_at DateTime  @default(now())
   updated_at DateTime? @updatedAt()
   deleted_at DateTime?
 
-  Words   Word[]
-  Players User[]
+  Owner Player @relation(fields: [owner_id], references: [id])
+  Words Word[]
 
   @@map("games")
 }
 
-model User {
+model Player {
   id         Int       @id @default(autoincrement())
   name       String
   email      String    @unique()
@@ -59,7 +61,7 @@ model User {
   updated_at DateTime? @updatedAt()
   deleted_at DateTime?
 
-  Game Game[]
+  Games Game[]
 
   @@map("players")
 }
