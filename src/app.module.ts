@@ -3,6 +3,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config'
 import { CacheModule } from '@nestjs/cache-manager'
 import { redisStore } from 'cache-manager-redis-yet'
 import type { RedisClientOptions } from 'redis'
+import LogicService from './logic/logic.service'
 import GameModule from './games/games.module'
 import WebsocketGateway from './websocket/websocket.gateway'
 import WebsocketModule from './websocket/websocket.module'
@@ -30,6 +31,6 @@ import PrismaModule from './prisma/prisma.module'
     GameModule,
   ],
   controllers: [AppController],
-  providers: [AppService, WebsocketGateway, Logger],
+  providers: [AppService, WebsocketGateway, Logger, LogicService],
 })
 export default class AppModule {}

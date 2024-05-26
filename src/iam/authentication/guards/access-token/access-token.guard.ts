@@ -9,7 +9,7 @@ import { JwtService } from '@nestjs/jwt'
 import { ConfigType } from '@nestjs/config'
 import { Request } from 'express'
 import jwtConfig from '../../../config/jwt.config'
-import REQUEST_USER_KEY from '../../../iam.constants'
+import REQUEST_PLAYER_KEY from '../../../iam.constants'
 
 @Injectable()
 export default class AccessTokenGuard implements CanActivate {
@@ -28,7 +28,7 @@ export default class AccessTokenGuard implements CanActivate {
     }
 
     try {
-      request[REQUEST_USER_KEY] = await this.jwtService.verifyAsync(
+      request[REQUEST_PLAYER_KEY] = await this.jwtService.verifyAsync(
         token,
         this.jwtConfiguration,
       )

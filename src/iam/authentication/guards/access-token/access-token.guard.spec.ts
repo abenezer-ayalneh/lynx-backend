@@ -1,10 +1,10 @@
 import { JwtService } from '@nestjs/jwt'
 import { Test, TestingModule } from '@nestjs/testing'
 import { ExecutionContext, UnauthorizedException } from '@nestjs/common'
-import { User } from '@prisma/client'
+import { Player } from '@prisma/client'
 import jwtConfig from '../../../config/jwt.config'
-import { AccessTokenGuard } from './access-token.guard'
-import { REQUEST_USER_KEY } from '../../../iam.constants'
+import AccessTokenGuard from './access-token.guard'
+import REQUEST_PLAYER_KEY from '../../../iam.constants'
 
 describe('AccessTokenGuard', () => {
   let accessTokenGuard: AccessTokenGuard
@@ -12,7 +12,7 @@ describe('AccessTokenGuard', () => {
     id: 1,
     email: 'john.doe@gmail.com',
     password: 'hashedPassword',
-  } as User
+  } as Player
   const mockJwtService = {
     verifyAsync: jest.fn().mockReturnValue(mockUser),
   }
@@ -72,8 +72,8 @@ describe('AccessTokenGuard', () => {
     // Assert
     expect.assertions(3)
     expect(result).toBe(true)
-    expect(mockRequest[REQUEST_USER_KEY]).toBeDefined()
-    expect(mockRequest[REQUEST_USER_KEY]).toBe(mockUser)
+    expect(mockRequest[REQUEST_PLAYER_KEY]).toBeDefined()
+    expect(mockRequest[REQUEST_PLAYER_KEY]).toBe(mockUser)
   })
 
   it('canActivate => should throw UnauthorizedException if token is not available', async () => {

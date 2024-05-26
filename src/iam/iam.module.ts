@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common'
 import { JwtModule } from '@nestjs/jwt'
 import { ConfigModule } from '@nestjs/config'
+import { APP_GUARD } from '@nestjs/core'
 import HashingService from './hashing/hashing.service'
 import BcryptService from './hashing/bcrypt.service'
 import AuthenticationController from './authentication/authentication.controller'
@@ -19,12 +20,10 @@ import RefreshTokenIdsStorage from './authentication/refresh-token-ids.storage/r
       provide: HashingService,
       useClass: BcryptService,
     },
-    // FIXME enable this global guard to protect routes by default
-    // {
-    //   provide: APP_GUARD,
-    //   useClass: AuthenticationGuard,
-    // },
-    AccessTokenGuard,
+    {
+      provide: APP_GUARD,
+      useClass: AccessTokenGuard,
+    },
     RefreshTokenIdsStorage,
     AuthenticationService,
   ],
