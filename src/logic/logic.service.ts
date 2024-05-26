@@ -9,7 +9,11 @@ type Type<T> = new (...args: any[]) => T
 export default class LogicService implements OnApplicationShutdown {
   server: Server = null
 
-  constructor(private readonly logger: Logger) {}
+  logger: Logger
+
+  constructor() {
+    this.logger = new Logger()
+  }
 
   createServer(httpServer: http.Server) {
     if (this.server) return

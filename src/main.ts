@@ -12,7 +12,6 @@ import { ConfigService } from '@nestjs/config'
 import { playground } from '@colyseus/playground'
 import AppModule from './app.module'
 import ValidationException from './utils/exceptions/validation.exception'
-import GlobalExceptionFilter from './utils/filters/global-exception.filter'
 import winstonLoggerInstance from './utils/log/winston.log'
 import SoloRoom from './logic/rooms/solo/solo.room'
 
@@ -55,9 +54,6 @@ async function bootstrap() {
 
   // Enable CORS from allowed origins listed in .env
   app.enableCors({ origin: configService.get('CORS_ALLOWED_ORIGIN') ?? false })
-
-  // Enable the global exception filter
-  app.useGlobalFilters(new GlobalExceptionFilter(logger))
 
   // Add an 'api' prefix to all controller routes
   app.setGlobalPrefix('api')

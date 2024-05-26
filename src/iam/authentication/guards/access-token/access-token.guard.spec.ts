@@ -8,13 +8,13 @@ import REQUEST_PLAYER_KEY from '../../../iam.constants'
 
 describe('AccessTokenGuard', () => {
   let accessTokenGuard: AccessTokenGuard
-  const mockUser = {
+  const mockPlayer = {
     id: 1,
     email: 'john.doe@gmail.com',
     password: 'hashedPassword',
   } as Player
   const mockJwtService = {
-    verifyAsync: jest.fn().mockReturnValue(mockUser),
+    verifyAsync: jest.fn().mockReturnValue(mockPlayer),
   }
   const mockJwtConfiguration = {
     secret: '33MDF2rsjXjnuguK4wiv7TORMJimHLdgiOBupn0r5IfhVQ6K',
@@ -58,7 +58,7 @@ describe('AccessTokenGuard', () => {
       headers: {
         authorization: 'Bearer valid-token',
       },
-      user: undefined,
+      player: undefined,
     }
     const executionContext = {
       switchToHttp: () => ({
@@ -73,7 +73,7 @@ describe('AccessTokenGuard', () => {
     expect.assertions(3)
     expect(result).toBe(true)
     expect(mockRequest[REQUEST_PLAYER_KEY]).toBeDefined()
-    expect(mockRequest[REQUEST_PLAYER_KEY]).toBe(mockUser)
+    expect(mockRequest[REQUEST_PLAYER_KEY]).toBe(mockPlayer)
   })
 
   it('canActivate => should throw UnauthorizedException if token is not available', async () => {

@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing'
 import { JwtService } from '@nestjs/jwt'
 import { DeepMockProxy, mockDeep } from 'jest-mock-extended'
-import { PrismaClient, User } from '@prisma/client'
+import { PrismaClient, Player } from '@prisma/client'
 import { ConflictException, UnauthorizedException } from '@nestjs/common'
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library'
 import { plainToInstance } from 'class-transformer'
@@ -67,21 +67,26 @@ describe('AuthenticationService', () => {
     expect(authenticationService).toBeDefined()
   })
 
-  it('signUp => should create a new user with hashed password', async () => {
+  it('signUp => should create a new player with hashed password', async () => {
     // Arrange
     const signUpDto = {
       email: 'john.doe@gmail.com',
       password: 'passpass',
     } as SignUpDto
     const hashedPassword = 'this-is-a-hashed-password'
-    const user = {
+    const player = {
       id: 1,
+      name: 'John Doe',
       email: signUpDto.email,
       password: hashedPassword,
-    } as User
+      status: true,
+      created_at: new Date(),
+      updated_at: new Date(),
+      deleted_at: new Date(),
+    } as Player
 
     jest.spyOn(mockBcryptService, 'hash').mockReturnValue(hashedPassword)
-    prisma.user.create.mockReturnValue(user) // TODO find a way to do it without ts-ignore
+    prisma.player.create.mockReturnValue(player) // TODO find a way to do it without ts-ignore
 
     // Act
     await authenticationService.signUp(signUpDto)
@@ -90,8 +95,8 @@ describe('AuthenticationService', () => {
     expect.assertions(4)
     expect(mockBcryptService.hash).toHaveBeenCalledTimes(1)
     expect(mockBcryptService.hash).toHaveBeenCalledWith(signUpDto.password)
-    expect(prisma.user.create).toHaveBeenCalledTimes(1)
-    expect(prisma.user.create).toHaveBeenCalledWith({
+    expect(prisma.player.create).toHaveBeenCalledTimes(1)
+    expect(prisma.player.create).toHaveBeenCalledWith({
       data: { email: signUpDto.email, password: hashedPassword },
     })
   })
@@ -106,8 +111,8 @@ describe('AuthenticationService', () => {
 
     jest.spyOn(mockBcryptService, 'hash').mockReturnValue(hashedPassword)
 
-    prisma.user.create.mockRejectedValue(
-      new PrismaClientKnownRequestError('User already exists', {
+    prisma.player.create.mockRejectedValue(
+      new PrismaClientKnownRequestError('Player already exists', {
         code: 'P2002',
         clientVersion: '2.13.0-dev.93',
       }),
@@ -134,14 +139,14 @@ describe('AuthenticationService', () => {
     expect(errors.length).not.toBe(0)
   })
 
-  it('signIn => should return generated tokens for the authenticated user', async () => {
+  it('signIn => should return generated tokens for the authenticated player', async () => {
     // Arrange
     const signInDto = {
       email: 'john.doe@gmail.com',
       password: 'passpass',
     } as SignInDto
 
-    const user = {
+    const player = {
       id: 1,
       email: 'john.doe@gmail.com',
       password: 'passpass',
@@ -152,7 +157,7 @@ describe('AuthenticationService', () => {
       refreshToken: 'refreshToken',
     }
 
-    prisma.user.findFirst.mockReturnValue(user) // TODO find a way to do it without ts-ignore
+    prisma.player.findFirst.mockReturnValue(player) // TODO find a way to do it without ts-ignore
     jest.spyOn(mockBcryptService, 'compare').mockReturnValue(true)
     jest
       .spyOn(authenticationService, 'generateTokens')
@@ -168,36 +173,36 @@ describe('AuthenticationService', () => {
     expect(result.refreshToken).toBeDefined()
   })
 
-  it("signIn => should return 'User does not exist' UnauthorizedException when the user doesn't exist in the database", async () => {
+  it("signIn => should return 'Player does not exist' UnauthorizedException when the player doesn't exist in the database", async () => {
     // Arrange
     const signInDto = {
       email: 'john.doe@gmail.com',
       password: 'passpass',
     } as SignInDto
 
-    prisma.user.findFirst.mockReturnValue(null) // TODO find a way to do it without ts-ignore
+    prisma.player.findFirst.mockReturnValue(null) // TODO find a way to do it without ts-ignore
 
     // Act & Assert
     expect.assertions(1)
     await expect(authenticationService.signIn(signInDto)).rejects.toThrow(
-      new UnauthorizedException('User does not exists'),
+      new UnauthorizedException('Player does not exists'),
     )
   })
 
-  it("signIn => should return 'Email or password mismatch' UnauthorizedException when the user's email and password doesn't match", async () => {
+  it("signIn => should return 'Email or password mismatch' UnauthorizedException when the player's email and password doesn't match", async () => {
     // Arrange
     const signInDto = {
       email: 'john.doe@gmail.com',
       password: 'passpass',
     } as SignInDto
 
-    const user = {
+    const player = {
       id: 1,
       email: 'john.doe@gmail.com',
       password: 'passpass',
     }
 
-    prisma.user.findFirst.mockReturnValue(user) // TODO find a way to do it without ts-ignore
+    prisma.player.findFirst.mockReturnValue(player) // TODO find a way to do it without ts-ignore
     jest.spyOn(mockBcryptService, 'compare').mockReturnValue(false)
 
     // Act & Assert
@@ -207,9 +212,9 @@ describe('AuthenticationService', () => {
     )
   })
 
-  it('generateTokens => generate access and refresh token for the given user', async () => {
+  it('generateTokens => generate access and refresh token for the given player', async () => {
     // Arrange
-    const user = {
+    const player = {
       id: 1,
       email: 'john.doe@gmail.com',
       password: 'passpass',
@@ -220,7 +225,7 @@ describe('AuthenticationService', () => {
       .mockReturnValue(Promise.resolve('generated-token'))
 
     // Act
-    const result = await authenticationService.generateTokens(user)
+    const result = await authenticationService.generateTokens(player)
 
     // Assert
     expect.assertions(5)
@@ -233,13 +238,13 @@ describe('AuthenticationService', () => {
 
   /**
    * Test for the following:
-   * 1. Normal flow where JWT verification passes, user is found, refresh token is validated via refresh token storage
-   * 2. If the user is not found, it should throw unauthorized exception
+   * 1. Normal flow where JWT verification passes, player is found, refresh token is validated via refresh token storage
+   * 2. If the player is not found, it should throw unauthorized exception
    * 3. If the refresh token ID is invalid, it should throw unauthorized exception
    */
   it('refreshTokens => should validate sent refresh token and return an access and refresh tokens', async () => {
     // Arrange
-    const user = {
+    const player = {
       id: 1,
       email: 'john.doe@gmail.com',
       password: 'passpass',
@@ -248,8 +253,8 @@ describe('AuthenticationService', () => {
 
     jest
       .spyOn(mockJwtService, 'verifyAsync')
-      .mockReturnValue({ sub: user.id, refreshTokenId: refreshToken })
-    prisma.user.findFirstOrThrow.mockReturnValue(user) // TODO find a way to do it without ts-ignore
+      .mockReturnValue({ sub: player.id, refreshTokenId: refreshToken })
+    prisma.player.findFirstOrThrow.mockReturnValue(player) // TODO find a way to do it without ts-ignore
     jest.spyOn(mockRefreshTokenIdsStorage, 'validate').mockReturnValue(true)
     jest.spyOn(authenticationService, 'generateTokens').mockReturnValue(
       Promise.resolve({
@@ -272,9 +277,9 @@ describe('AuthenticationService', () => {
     expect(authenticationService.generateTokens).toHaveBeenCalledTimes(1)
   })
 
-  it('refreshTokens => should throw unauthorized exception if the user is not found', async () => {
+  it('refreshTokens => should throw unauthorized exception if the player is not found', async () => {
     // Arrange
-    const user = {
+    const player = {
       id: 1,
       email: 'john.doe@gmail.com',
       password: 'passpass',
@@ -283,9 +288,9 @@ describe('AuthenticationService', () => {
 
     jest
       .spyOn(mockJwtService, 'verifyAsync')
-      .mockReturnValue({ sub: user.id, refreshTokenId: refreshToken })
-    prisma.user.findFirstOrThrow.mockRejectedValue(
-      new PrismaClientKnownRequestError('User does not exists', {
+      .mockReturnValue({ sub: player.id, refreshTokenId: refreshToken })
+    prisma.player.findFirstOrThrow.mockRejectedValue(
+      new PrismaClientKnownRequestError('Player does not exists', {
         code: 'P2025',
         clientVersion: '2.13.0-dev.93',
       }),
@@ -300,7 +305,7 @@ describe('AuthenticationService', () => {
 
   it('refreshTokens => should throw unauthorized exception if the refresh token ID is invalid', async () => {
     // Arrange
-    const user = {
+    const player = {
       id: 1,
       email: 'john.doe@gmail.com',
       password: 'passpass',
@@ -309,8 +314,8 @@ describe('AuthenticationService', () => {
 
     jest
       .spyOn(mockJwtService, 'verifyAsync')
-      .mockReturnValue({ sub: user.id, refreshTokenId: refreshToken })
-    prisma.user.findFirstOrThrow.mockReturnValue(user) // TODO find a way to do it without ts-ignore
+      .mockReturnValue({ sub: player.id, refreshTokenId: refreshToken })
+    prisma.player.findFirstOrThrow.mockReturnValue(player) // TODO find a way to do it without ts-ignore
     jest.spyOn(mockRefreshTokenIdsStorage, 'validate').mockReturnValue(false)
     jest.spyOn(authenticationService, 'generateTokens').mockReturnValue(
       Promise.resolve({

@@ -1,13 +1,13 @@
 import { createParamDecorator, ExecutionContext } from '@nestjs/common'
 import REQUEST_PLAYER_KEY from '../iam.constants'
-import { ActiveUserData } from '../interfaces/active-user-data.interface'
+import ActivePlayerData from '../interfaces/active-player-data.interface'
 
-const ActiveUser = createParamDecorator(
-  (field: keyof ActiveUserData | undefined, context: ExecutionContext) => {
+const ActivePlayer = createParamDecorator(
+  (field: keyof ActivePlayerData | undefined, context: ExecutionContext) => {
     const request = context.switchToHttp().getRequest()
-    const user: ActiveUserData | undefined = request[REQUEST_PLAYER_KEY]
-    return field ? user?.[field] : user
+    const player: ActivePlayerData | undefined = request[REQUEST_PLAYER_KEY]
+    return field ? player?.[field] : player
   },
 )
 
-export default ActiveUser
+export default ActivePlayer

@@ -9,6 +9,7 @@ import AuthenticationService from './authentication/authentication.service'
 import jwtConfig from './config/jwt.config'
 import AccessTokenGuard from './authentication/guards/access-token/access-token.guard'
 import RefreshTokenIdsStorage from './authentication/refresh-token-ids.storage/refresh-token-ids.storage'
+import AuthenticationGuard from './authentication/guards/authentication/authentication.guard'
 
 @Module({
   imports: [
@@ -22,8 +23,9 @@ import RefreshTokenIdsStorage from './authentication/refresh-token-ids.storage/r
     },
     {
       provide: APP_GUARD,
-      useClass: AccessTokenGuard,
+      useClass: AuthenticationGuard,
     },
+    AccessTokenGuard,
     RefreshTokenIdsStorage,
     AuthenticationService,
   ],

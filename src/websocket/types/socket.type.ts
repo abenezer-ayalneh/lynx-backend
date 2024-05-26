@@ -1,8 +1,8 @@
-export interface SocketUserStatusType {
-  [key: string]: UserStatusType
+export interface SocketPlayerStatusType {
+  [key: string]: PlayerStatusType
 }
 
-export interface UserStatusType {
+export interface PlayerStatusType {
   username: string
   mute: boolean
   microphone: boolean

@@ -3,7 +3,8 @@ import { ConfigModule, ConfigService } from '@nestjs/config'
 import { CacheModule } from '@nestjs/cache-manager'
 import { redisStore } from 'cache-manager-redis-yet'
 import type { RedisClientOptions } from 'redis'
-import LogicService from './logic/logic.service'
+import { APP_FILTER } from '@nestjs/core'
+import LogicModule from './logic/logic.module'
 import GameModule from './games/games.module'
 import WebsocketGateway from './websocket/websocket.gateway'
 import WebsocketModule from './websocket/websocket.module'
@@ -11,6 +12,7 @@ import AppController from './app.controller'
 import AppService from './app.service'
 import IamModule from './iam/iam.module'
 import PrismaModule from './prisma/prisma.module'
+import GlobalExceptionFilter from './utils/filters/global-exception.filter'
 
 @Module({
   imports: [
@@ -29,8 +31,14 @@ import PrismaModule from './prisma/prisma.module'
     IamModule,
     PrismaModule,
     GameModule,
+    LogicModule,
   ],
   controllers: [AppController],
-  providers: [AppService, WebsocketGateway, Logger, LogicService],
+  providers: [
+    Logger,
+    AppService,
+    WebsocketGateway,
+    { provide: APP_FILTER, useClass: GlobalExceptionFilter }, // Register the global exception filter in the app level (i.e. globally)
+  ],
 })
 export default class AppModule {}
