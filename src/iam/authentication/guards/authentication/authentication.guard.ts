@@ -33,15 +33,24 @@ export default class AuthenticationGuard implements CanActivate {
     const guards = authTypes
       .map((type: AuthType) => this.authGuardMap[type])
       .flat()
-    const error = new UnauthorizedException()
+    let error = new UnauthorizedException()
+    const canActivateArray = []
 
-    for (let i = 0; i < guards.length; i += 1) {
-      const instance = guards[i]
-      const canActivate = Promise.resolve(instance.canActivate(context))
+    guards.forEach((guard) => {
+      canActivateArray.push(Promise.resolve(guard.canActivate(context)))
+    })
 
-      if (canActivate) {
-        return true
+    try {
+      const data = await Promise.all(canActivateArray)
+
+      for (let i = 0; i < data.length; i += 1) {
+        const datum = data[i]
+        if (datum) {
+          return true
+        }
       }
+    } catch (err) {
+      error = err
     }
 
     throw error
