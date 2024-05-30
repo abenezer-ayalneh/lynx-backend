@@ -13,7 +13,8 @@ import { playground } from '@colyseus/playground'
 import AppModule from './app.module'
 import ValidationException from './utils/exceptions/validation.exception'
 import winstonLoggerInstance from './utils/log/winston.log'
-import SoloRoom from './logic/rooms/solo/solo.room'
+import SoloRoom from './logic/rooms/solo.room'
+import MultiplayerRoom from './logic/rooms/multiplayer.room'
 
 function injectDeps<T extends { new (...args: any[]): Room }>(
   app: INestApplication,
@@ -53,7 +54,11 @@ async function bootstrap() {
   const logger = new Logger()
 
   // Enable CORS from allowed origins listed in .env
-  app.enableCors({ origin: configService.get('CORS_ALLOWED_ORIGIN') ?? false })
+  app.enableCors({
+    origin: configService.get('CORS_ALLOWED_ORIGIN')
+      ? configService.get('CORS_ALLOWED_ORIGIN').split(',')
+      : false,
+  })
 
   // Add an 'api' prefix to all controller routes
   app.setGlobalPrefix('api')
@@ -81,7 +86,8 @@ async function bootstrap() {
     }),
   })
 
-  colyseusServer.define('base', injectDeps(app, SoloRoom))
+  colyseusServer.define('solo', injectDeps(app, SoloRoom))
+  colyseusServer.define('multiplayer', injectDeps(app, MultiplayerRoom))
 
   // Port on which the application will run
   const port = configService.get<number>('APP_PORT') || 3000

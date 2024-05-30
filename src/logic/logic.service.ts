@@ -12,7 +12,7 @@ export default class LogicService implements OnApplicationShutdown {
   logger: Logger
 
   constructor() {
-    this.logger = new Logger()
+    this.logger = new Logger('LogicService')
   }
 
   createServer(httpServer: http.Server) {
@@ -31,11 +31,11 @@ export default class LogicService implements OnApplicationShutdown {
     }
   }
 
-  onApplicationShutdown(sig) {
+  async onApplicationShutdown(sig) {
     if (!this.server) return
-    this.logger.verbose(
+    this.logger.warn(
       `Caught signal ${sig}. Game service shutting down on ${new Date()}.`,
     )
-    this.server.gracefullyShutdown()
+    await this.server.gracefullyShutdown()
   }
 }

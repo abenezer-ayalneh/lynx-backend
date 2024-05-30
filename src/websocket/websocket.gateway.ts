@@ -22,7 +22,7 @@ export default class WebsocketGateway
   connectedPlayers: SocketPlayerStatusType | undefined = {}
 
   constructor(private readonly websocketService: WebsocketService) {
-    this.logger = new Logger()
+    this.logger = new Logger('WebsocketGateway')
   }
 
   afterInit(server: Server) {

@@ -1,10 +1,14 @@
-import { Injectable } from '@nestjs/common'
+import { Injectable, Logger } from '@nestjs/common'
 import PrismaService from 'src/prisma/prisma.service'
 import CreateGameDto from './dto/create-game.dto'
 
 @Injectable()
 export default class GameService {
-  constructor(private readonly prismaService: PrismaService) {}
+  logger: Logger
+
+  constructor(private readonly prismaService: PrismaService) {
+    this.logger = new Logger('GameService')
+  }
 
   async create(createGameDto: CreateGameDto, playerId: number) {
     // Get the number of words to pick from
@@ -14,7 +18,7 @@ export default class GameService {
     const words = this.getWords(wordsCount, 3)
 
     // Create a game and connect it with chosen words
-    return this.prismaService.game.create({
+    const game = await this.prismaService.game.create({
       data: {
         type: createGameDto.type,
         Owner: {
@@ -32,6 +36,10 @@ export default class GameService {
         created_at: true,
       },
     })
+
+    // colyseusServer.define(SoloRoom)
+
+    return game
   }
 
   findAll() {

@@ -1,9 +1,15 @@
-import { Injectable } from '@nestjs/common'
 import { Room } from 'colyseus'
-// import http from 'http'
+import { Logger } from '@nestjs/common'
 
-@Injectable()
-export default class SoloRoom extends Room {
+export default class MultiplayerRoom extends Room {
+  logger: Logger
+
+  constructor() {
+    super()
+    this.logger = new Logger('LogicRoom')
+  }
+
+  //
   // // (optional) Validate client auth token before joining/creating the room
   // static async onAuth(token: string, request: http.IncomingMessage) {}
   //

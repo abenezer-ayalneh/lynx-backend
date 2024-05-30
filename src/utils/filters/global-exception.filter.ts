@@ -4,7 +4,6 @@ import {
   ExceptionFilter,
   HttpException,
   Logger,
-  UnauthorizedException,
 } from '@nestjs/common'
 import { Response } from 'express'
 import ValidationException from '../exceptions/validation.exception'
@@ -27,20 +26,16 @@ export default class GlobalExceptionFilter implements ExceptionFilter {
     // Create the default response data structure
     const responseData: FilterResponseInterface = {
       statusCode: 500,
-      message: 'Internal server error',
+      data: 'Internal server error',
       error: 'Server Error',
     }
 
     if (exception instanceof ValidationException) {
-      responseData.message = exception.getMessage
+      responseData.data = exception.getMessage
       responseData.statusCode = exception.getStatusCode
       responseData.error = exception.getError
     } else if (exception instanceof HttpException) {
-      responseData.message = exception.getResponse()
-      responseData.statusCode = exception.getStatus()
-      responseData.error = 'HTTP Error'
-    } else if (exception instanceof UnauthorizedException) {
-      responseData.message = exception.getResponse()
+      responseData.data = exception.getResponse()
       responseData.statusCode = exception.getStatus()
       responseData.error = 'HTTP Error'
     }

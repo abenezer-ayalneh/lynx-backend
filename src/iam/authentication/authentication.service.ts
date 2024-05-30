@@ -133,4 +133,16 @@ export default class AuthenticationService {
       throw new UnauthorizedException()
     }
   }
+
+  async checkToken(playerId: number) {
+    return this.prismaService.player.findUnique({
+      where: { id: playerId },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        status: true,
+      },
+    })
+  }
 }
