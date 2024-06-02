@@ -25,7 +25,7 @@ export default class SoloRoom extends Room<RoomState> {
 
   constructor(private readonly prismaService: PrismaService) {
     super()
-    this.logger = new Logger('LogicRoom')
+    this.logger = new Logger('SoloRoom')
   }
 
   // When room is initialized
@@ -105,6 +105,7 @@ export default class SoloRoom extends Room<RoomState> {
 
     this.clock.setTimeout(() => {
       this.state.time = SECOND_CYCLE_TIME
+      this.state.word.cues[3].shown = true
       this.gameTimeInterval.clear()
       this.secondCycle(roomState)
     }, FIRST_CYCLE_TIME * 1000)
@@ -117,6 +118,7 @@ export default class SoloRoom extends Room<RoomState> {
 
     this.clock.setTimeout(() => {
       this.state.time = THIRD_CYCLE_TIME
+      this.state.word.cues[4].shown = true
       this.gameTimeInterval.clear()
       this.thirdCycle(roomState)
     }, SECOND_CYCLE_TIME * 1000)
