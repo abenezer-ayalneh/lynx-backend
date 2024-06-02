@@ -14,10 +14,10 @@ import HashingService from '../hashing/hashing.service'
 import SignUpDto from './dto/sign-up.dto/sign-up.dto'
 import SignInDto from './dto/sign-in.dto/sign-in.dto'
 import jwtConfig from '../config/jwt.config'
-import ActivePlayerData from '../interfaces/active-player-data.interface'
+import { ActivePlayerData } from '../types/active-player-data.type'
 import RefreshTokenDto from './dto/refresh-token.dto'
 import RefreshTokenIdsStorage from './refresh-token-ids.storage/refresh-token-ids.storage'
-import { RefreshTokenData } from '../interfaces/refresh-token-data.interfaces'
+import { RefreshTokenData } from '../types/refresh-token-data.type'
 import InvalidatedRefreshTokenError from '../errors/invalidated-refresh-token.error'
 
 @Injectable()

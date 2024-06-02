@@ -1,4 +1,6 @@
-import { ArraySchema, Schema, type } from '@colyseus/schema'
+import { Schema, type } from '@colyseus/schema'
+import { FIRST_CYCLE_TIME } from '../../../commons/constants/game-time.constant'
+import Word from './word.state'
 
 export default class RoomState extends Schema {
   @type('boolean') guessing: boolean = false
@@ -7,29 +9,13 @@ export default class RoomState extends Schema {
 
   @type('number') totalRound: number = 10
 
-  @type('number') time: number = 30
+  @type('number') time: number = FIRST_CYCLE_TIME
 
   @type('number') wordCount: number = 1
 
-  @type(['string']) words = new ArraySchema<string>()
+  @type(Word) word: Word
 
   @type('number') numberOfPlayers: number = 1
 
-  // constructor({
-  //   guessing,
-  //   round,
-  //   time,
-  //   wordCount,
-  //   words,
-  //   numberOfPlayers,
-  // }: RoomSchemaInterface) {
-  //   super()
-  //
-  //   this.guessing = guessing
-  //   this.round = round
-  //   this.time = time
-  //   this.wordCount = wordCount
-  //   this.words = new ArraySchema<string>()
-  //   this.numberOfPlayers = numberOfPlayers
-  // }
+  @type('number') startCountdown: number = 3
 }

@@ -1,6 +1,6 @@
 import { createParamDecorator, ExecutionContext } from '@nestjs/common'
 import REQUEST_PLAYER_KEY from '../iam.constants'
-import ActivePlayerData from '../interfaces/active-player-data.interface'
+import { ActivePlayerData } from '../types/active-player-data.type'
 
 const ActivePlayer = createParamDecorator(
   (field: keyof ActivePlayerData | undefined, context: ExecutionContext) => {
