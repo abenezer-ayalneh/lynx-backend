@@ -1,7 +1,8 @@
 import Word from '../states/word.state'
 
-export type RoomPropsType = {
+export type RoomProps = {
   word: Word
+  words: Word[]
   guessing?: boolean
   round?: number
   totalRound?: number
@@ -9,4 +10,10 @@ export type RoomPropsType = {
   wordCount?: number
   numberOfPlayers?: number
   startCountdown?: number
+}
+
+export type RoomCreateProps = {
+  gameId: number
+  gameType: string
+  playerId: number
 }

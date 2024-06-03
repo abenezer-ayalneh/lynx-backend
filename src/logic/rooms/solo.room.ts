@@ -9,6 +9,7 @@ import {
 } from '../../commons/constants/game-time.constant'
 import PrismaService from '../../prisma/prisma.service'
 import Word from './states/word.state'
+import { RoomCreateProps } from './types/room-props.type'
 
 @Injectable()
 export default class SoloRoom extends Room<RoomState> {
@@ -20,22 +21,24 @@ export default class SoloRoom extends Room<RoomState> {
   // This is the time elapsed for the game per cycle
   public gameTimeInterval: Delayed
 
-  // Word IDs that have already been picked
-  private alreadyPickedWordIds: number[] = []
-
   constructor(private readonly prismaService: PrismaService) {
     super()
     this.logger = new Logger('SoloRoom')
   }
 
   // When room is initialized
-  async onCreate() {
+  async onCreate(data: RoomCreateProps) {
     // Set the randomly selected word to the state object's `word` attribute
-    const randomWord = await this.pickRandomWord()
+    const game = await this.prismaService.game.findUnique({
+      where: { id: data.gameId },
+      select: { Words: true },
+    })
+    const words = game.Words.map((word) => new Word(word))
+    // const randomWord = await this.pickRandomWord()
 
     // Create a RoomState object
     const roomState = new RoomState({
-      word: randomWord,
+      word: words[0],
       guessing: false,
       round: 1,
       totalRound: 10,
@@ -43,6 +46,7 @@ export default class SoloRoom extends Room<RoomState> {
       wordCount: 1,
       numberOfPlayers: 1,
       startCountdown: 3,
+      words,
     })
 
     // Set the room's state
@@ -50,47 +54,6 @@ export default class SoloRoom extends Room<RoomState> {
 
     // Start game preparation countdown
     this.startCountdown(roomState)
-  }
-
-  /**
-   * Pick a selected amount of random rows from the `words` table
-   */
-  async pickRandomWord(): Promise<Word> {
-    const wordsCount = await this.prismaService.word.count()
-    const skip = Math.max(0, Math.floor(Math.random() * wordsCount) - 1)
-    const fields = [
-      'id',
-      'key',
-      'cue_word_1',
-      'cue_word_2',
-      'cue_word_3',
-      'cue_word_4',
-      'cue_word_5',
-    ]
-    const sortDirection = ['asc', 'desc']
-    const orderBy = fields[Math.floor(Math.random() * fields.length)]
-    const orderDir =
-      sortDirection[Math.floor(Math.random() * sortDirection.length)]
-
-    const pickedWords = await this.prismaService.word.findMany({
-      where: {
-        id: {
-          notIn: this.alreadyPickedWordIds,
-        },
-      },
-      take: 1,
-      skip,
-      orderBy: { [orderBy]: orderDir },
-    })
-
-    if (pickedWords.length > 0) {
-      const pickedWord = new Word(pickedWords[0])
-      this.alreadyPickedWordIds.push(pickedWord.id)
-
-      return pickedWord
-    }
-
-    return null
   }
 
   startCountdown(roomState: RoomState) {
