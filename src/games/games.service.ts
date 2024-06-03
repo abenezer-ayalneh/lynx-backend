@@ -18,7 +18,7 @@ export default class GameService {
     const words = this.getWords(wordsCount, 3)
 
     // Create a game and connect it with chosen words
-    const game = await this.prismaService.game.create({
+    return this.prismaService.game.create({
       data: {
         type: createGameDto.type,
         Owner: {
@@ -36,10 +36,6 @@ export default class GameService {
         created_at: true,
       },
     })
-
-    // colyseusServer.define(SoloRoom)
-
-    return game
   }
 
   findAll() {

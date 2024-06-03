@@ -30,11 +30,20 @@ export default class SoloRoom extends Room<RoomState> {
 
   // When room is initialized
   async onCreate() {
-    // Create a RoomState object
-    const roomState = new RoomState()
-
     // Set the randomly selected word to the state object's `word` attribute
-    roomState.word = await this.pickRandomWord()
+    const randomWord = await this.pickRandomWord()
+
+    // Create a RoomState object
+    const roomState = new RoomState({
+      word: randomWord,
+      guessing: false,
+      round: 1,
+      totalRound: 10,
+      time: FIRST_CYCLE_TIME,
+      wordCount: 1,
+      numberOfPlayers: 1,
+      startCountdown: 3,
+    })
 
     // Set the room's state
     this.setState(roomState)
