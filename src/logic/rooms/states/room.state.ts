@@ -1,24 +1,26 @@
 import { Schema, type } from '@colyseus/schema'
-import { FIRST_CYCLE_TIME } from '../../../commons/constants/game-time.constant'
 import Word from './word.state'
 import { RoomProps } from '../types/room-props.type'
 
 export default class RoomState extends Schema {
-  @type('boolean') guessing: boolean = false
+  @type('boolean') guessing: boolean
 
-  @type('number') round: number = 1
+  @type('number') round: number
 
-  @type('number') totalRound: number = 10
+  @type('number') totalRound: number
 
-  @type('number') time: number = FIRST_CYCLE_TIME
+  @type('number') time: number
 
-  @type('number') wordCount: number = 1
+  @type('number') cycle: number
 
-  @type(Word) word: Word
+  @type(Word) word: Word | undefined
 
-  @type('number') numberOfPlayers: number = 1
+  @type('number') numberOfPlayers: number
 
-  @type('number') startCountdown: number = 3
+  @type('number') waitingCountdownTime: number
+
+  @type('string')
+  gameState: 'START_COUNTDOWN' | 'ROUND_END' | 'GAME_STARTED' | 'GAME_END'
 
   words: Word[]
 
@@ -28,20 +30,22 @@ export default class RoomState extends Schema {
     round,
     totalRound,
     time,
-    wordCount,
+    cycle,
     numberOfPlayers,
-    startCountdown,
+    waitingCountdownTime,
     words,
+    gameState,
   }: RoomProps) {
     super()
     this.guessing = guessing
     this.round = round
     this.totalRound = totalRound
     this.time = time
-    this.wordCount = wordCount
+    this.cycle = cycle
     this.word = word
     this.numberOfPlayers = numberOfPlayers
-    this.startCountdown = startCountdown
+    this.waitingCountdownTime = waitingCountdownTime
     this.words = words
+    this.gameState = gameState
   }
 }

@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common'
 import PrismaService from 'src/prisma/prisma.service'
 import CreateGameDto from './dto/create-game.dto'
+import { TOTAL_GAME_ROUNDS } from '../commons/constants/game-time.constant'
 
 @Injectable()
 export default class GameService {
@@ -15,7 +16,7 @@ export default class GameService {
     const wordsCount = await this.prismaService.word.count({})
 
     // Choose random words(their IDs) from the total
-    const words = this.getWords(wordsCount, 3)
+    const words = this.getWords(wordsCount, TOTAL_GAME_ROUNDS)
 
     // Create a game and connect it with chosen words
     return this.prismaService.game.create({

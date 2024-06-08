@@ -14,10 +14,7 @@ export default class Word extends Schema {
 
     const cueWords = Object.keys(word)
       .filter((key) => key.startsWith('cue_word_'))
-      .map(
-        (cue, index) =>
-          new CueWord(index + 1, word[cue].replace(word.key, ''), index < 3),
-      )
+      .map((cue, index) => new CueWord(index + 1, word[cue], index < 3))
 
     this.id = word.id
     this.key = word.key

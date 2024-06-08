@@ -7,9 +7,10 @@ export type RoomProps = {
   round?: number
   totalRound?: number
   time?: number
-  wordCount?: number
+  cycle?: number
   numberOfPlayers?: number
-  startCountdown?: number
+  waitingCountdownTime?: number
+  gameState: 'START_COUNTDOWN' | 'ROUND_END' | 'GAME_STARTED' | 'GAME_END'
 }
 
 export type RoomCreateProps = {
