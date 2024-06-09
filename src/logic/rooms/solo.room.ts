@@ -28,16 +28,26 @@ export default class SoloRoom extends Room<RoomState> {
     this.logger = new Logger('SoloRoom')
   }
 
-  // When room is initialized
+  /**
+   * Initiate a room and subscribe to the guess message type
+   * @param data
+   */
   async onCreate(data: RoomCreateProps) {
     await this.createSoloGame(data)
     this.onMessage(GUESS, async (client, message: { guess: string }) => {
       const winner = await this.checkForWinner(message.guess)
       if (winner) {
-        await this.stopCurrentRoundOrGame()
+        await this.handleGameWon()
       }
-      client.send(GUESS, { winner })
     })
+  }
+
+  /**
+   * Handle all the necessary steps when a player wins a round
+   */
+  async handleGameWon() {
+    this.state.winner = true
+    await this.stopCurrentRoundOrGame()
   }
 
   async createSoloGame(data: RoomCreateProps) {
@@ -53,7 +63,7 @@ export default class SoloRoom extends Room<RoomState> {
     const roomState = new RoomState({
       word: undefined,
       guessing: false,
-      round: 1,
+      round: 0,
       totalRound: game.Words.length,
       time: FIRST_CYCLE_TIME,
       cycle: 1,
@@ -61,6 +71,7 @@ export default class SoloRoom extends Room<RoomState> {
       waitingCountdownTime: START_COUNTDOWN,
       words,
       gameState: 'START_COUNTDOWN',
+      winner: false,
     })
 
     // Set the room's state
@@ -72,9 +83,9 @@ export default class SoloRoom extends Room<RoomState> {
 
   /**
    * Delayed countdown
-   * @param countdown
+   * @param timeoutTime
    */
-  createCountdown(countdown: number) {
+  createCountdown(timeoutTime: number) {
     this.waitingCountdownInterval = this.clock.setInterval(() => {
       this.state.waitingCountdownTime -= 1
     }, 1000)
@@ -85,7 +96,7 @@ export default class SoloRoom extends Room<RoomState> {
         this.firstCycle()
         this.waitingCountdownInterval.clear()
       },
-      (countdown + 1) * 1000,
+      (timeoutTime + 1) * 1000,
     )
   }
 
@@ -93,33 +104,38 @@ export default class SoloRoom extends Room<RoomState> {
    * Run the first cycle of the current game round
    */
   firstCycle() {
-    this.state.word = this.state.words[this.state.round - 1]
+    this.state.time = FIRST_CYCLE_TIME // Set time to the first time constant
+    this.state.cycle = 1 // Set the cycle number
+    this.state.winner = false // Reset the winner state
+    this.state.round += 1 // Goto the next round
+    this.state.word = this.state.words[this.state.round - 1] // Choose the word to be played from the words list
     this.gameTimeInterval = this.clock.setInterval(() => {
       this.state.time -= 1
-    }, 1000)
 
-    this.clock.setTimeout(() => {
-      this.state.time = SECOND_CYCLE_TIME
-      this.state.word.cues[3].shown = true
-      this.gameTimeInterval.clear()
-      this.secondCycle()
-    }, FIRST_CYCLE_TIME * 1000)
+      if (this.state.time <= 0) {
+        this.state.time = SECOND_CYCLE_TIME
+        this.state.word.cues[3].shown = true
+        this.gameTimeInterval.clear()
+        this.secondCycle()
+      }
+    }, 1000)
   }
 
   /**
    * Run the second cycle of the current game round
    */
   secondCycle() {
+    this.state.cycle = 2
     this.gameTimeInterval = this.clock.setInterval(() => {
       this.state.time -= 1
-    }, 1000)
 
-    this.clock.setTimeout(() => {
-      this.state.time = THIRD_CYCLE_TIME
-      this.state.word.cues[4].shown = true
-      this.gameTimeInterval.clear()
-      this.thirdCycle()
-    }, SECOND_CYCLE_TIME * 1000)
+      if (this.state.time <= 0) {
+        this.state.time = THIRD_CYCLE_TIME
+        this.state.word.cues[4].shown = true
+        this.gameTimeInterval.clear()
+        this.thirdCycle()
+      }
+    }, 1000)
   }
 
   /**
@@ -128,14 +144,15 @@ export default class SoloRoom extends Room<RoomState> {
    * remaining words
    */
   thirdCycle() {
-    this.gameTimeInterval = this.clock.setInterval(() => {
+    this.state.cycle = 3
+    this.gameTimeInterval = this.clock.setInterval(async () => {
       this.state.time -= 1
-    }, 1000)
 
-    this.clock.setTimeout(async () => {
-      await this.stopCurrentRoundOrGame()
-      this.gameTimeInterval.clear()
-    }, THIRD_CYCLE_TIME * 1000)
+      if (this.state.time <= 0) {
+        await this.stopCurrentRoundOrGame()
+        this.gameTimeInterval.clear()
+      }
+    }, 1000)
   }
 
   /**
@@ -158,21 +175,24 @@ export default class SoloRoom extends Room<RoomState> {
   }
 
   private async stopCurrentRoundOrGame() {
+    this.state.gameState = 'ROUND_END'
+    this.state.waitingCountdownTime = MID_GAME_COUNTDOWN
+    this.gameTimeInterval.clear()
+
     // Game is not done but the current round is
     if (this.state.words.length > this.state.round) {
-      this.state.gameState = 'ROUND_END'
-      this.state.round += 1
-      // this.state.word = this.state.words[this.state.round - 1]
-      this.state.time = FIRST_CYCLE_TIME
-      this.state.guessing = false
-      this.state.numberOfPlayers = 0
-      this.state.waitingCountdownTime = 10
-      this.gameTimeInterval.clear()
       this.createCountdown(MID_GAME_COUNTDOWN)
     } else {
-      this.state.gameState = 'GAME_END'
-      this.state.time = 0
-      this.state.cycle = 0
+      this.waitingCountdownInterval = this.clock.setInterval(() => {
+        this.state.waitingCountdownTime -= 1
+
+        if (this.state.waitingCountdownTime <= 0) {
+          this.state.gameState = 'GAME_END'
+          this.state.time = 0
+          this.state.word = undefined
+          this.waitingCountdownInterval.clear()
+        }
+      }, 1000)
     }
   }
 

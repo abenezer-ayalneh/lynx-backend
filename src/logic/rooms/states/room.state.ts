@@ -22,6 +22,8 @@ export default class RoomState extends Schema {
   @type('string')
   gameState: 'START_COUNTDOWN' | 'ROUND_END' | 'GAME_STARTED' | 'GAME_END'
 
+  @type('boolean') winner: boolean
+
   words: Word[]
 
   constructor({
@@ -35,6 +37,7 @@ export default class RoomState extends Schema {
     waitingCountdownTime,
     words,
     gameState,
+    winner,
   }: RoomProps) {
     super()
     this.guessing = guessing
@@ -47,5 +50,6 @@ export default class RoomState extends Schema {
     this.waitingCountdownTime = waitingCountdownTime
     this.words = words
     this.gameState = gameState
+    this.winner = winner
   }
 }

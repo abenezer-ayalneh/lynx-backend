@@ -11,6 +11,7 @@ export type RoomProps = {
   numberOfPlayers?: number
   waitingCountdownTime?: number
   gameState: 'START_COUNTDOWN' | 'ROUND_END' | 'GAME_STARTED' | 'GAME_END'
+  winner: boolean
 }
 
 export type RoomCreateProps = {
