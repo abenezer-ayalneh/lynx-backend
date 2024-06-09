@@ -16,7 +16,7 @@ export default class GameService {
     const wordsCount = await this.prismaService.word.count({})
 
     // Choose random words(their IDs) from the total
-    const words = this.getWords(wordsCount, TOTAL_GAME_ROUNDS)
+    const words = await this.getWords(wordsCount, TOTAL_GAME_ROUNDS)
 
     // Create a game and connect it with chosen words
     return this.prismaService.game.create({
@@ -68,10 +68,13 @@ export default class GameService {
     })
   }
 
-  getWords(total: number, uniqueNumbers: number): number[] {
-    if (total < uniqueNumbers) {
+  async getWords(
+    total: number,
+    uniqueNumbersQuantity: number,
+  ): Promise<number[]> {
+    if (total < uniqueNumbersQuantity) {
       throw new Error(
-        `Total numbers must be at least ${uniqueNumbers} to pick ${uniqueNumbers} unique numbers.`,
+        `Total numbers must be at least ${uniqueNumbersQuantity} to pick ${uniqueNumbersQuantity} unique numbers.`,
       )
     }
 
@@ -84,8 +87,15 @@ export default class GameService {
     const numbers = new Set<number>()
 
     // Generate unique random numbers
-    while (numbers.size < uniqueNumbers) {
-      numbers.add(getRandomInt(1, total))
+    while (numbers.size < uniqueNumbersQuantity) {
+      const randomNumber = getRandomInt(1, total)
+      // eslint-disable-next-line no-await-in-loop
+      const word = await this.prismaService.word.findUnique({
+        where: { id: randomNumber },
+      })
+      if (word) {
+        numbers.add(randomNumber)
+      }
     }
 
     // Convert the set to an array
