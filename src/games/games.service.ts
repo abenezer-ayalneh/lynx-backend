@@ -12,11 +12,11 @@ export default class GameService {
   }
 
   async create(createGameDto: CreateGameDto, playerId: number) {
-    // Get the number of words to pick from
-    const wordsCount = await this.prismaService.word.count({})
-
     // Choose random words(their IDs) from the total
-    const words = await this.getWords(wordsCount, TOTAL_GAME_ROUNDS)
+    // const words = await this.getWords(lastWord.id, TOTAL_GAME_ROUNDS)
+    const randomWordIds = await this.prismaService.$queryRawUnsafe<
+      { id: number }[]
+    >(`SELECT id FROM words ORDER BY random() LIMIT ${TOTAL_GAME_ROUNDS}`)
 
     // Create a game and connect it with chosen words
     return this.prismaService.game.create({
@@ -26,9 +26,7 @@ export default class GameService {
           connect: { id: playerId },
         },
         Words: {
-          connect: words.map((word) => ({
-            id: word,
-          })),
+          connect: randomWordIds,
         },
       },
       select: {
