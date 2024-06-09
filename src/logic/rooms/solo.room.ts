@@ -12,6 +12,10 @@ import PrismaService from '../../prisma/prisma.service'
 import Word from './states/word.state'
 import { RoomCreateProps } from './types/room-props.type'
 import GUESS from './constants/message.constant'
+import {
+  FIRST_CYCLE_SCORE,
+  SECOND_CYCLE_SCORE,
+} from './constants/score.constant'
 
 @Injectable()
 export default class SoloRoom extends Room<RoomState> {
@@ -47,6 +51,22 @@ export default class SoloRoom extends Room<RoomState> {
    */
   async handleGameWon() {
     this.state.winner = true
+    let playerScore = 0
+    switch (this.state.cycle) {
+      case 1:
+        playerScore = FIRST_CYCLE_SCORE
+        break
+      case 2:
+        playerScore = SECOND_CYCLE_SCORE
+        break
+      case 3:
+        playerScore = THIRD_CYCLE_TIME
+        break
+      default:
+        playerScore = 0
+    }
+
+    this.state.score += playerScore
     await this.stopCurrentRoundOrGame()
   }
 
@@ -72,6 +92,7 @@ export default class SoloRoom extends Room<RoomState> {
       words,
       gameState: 'START_COUNTDOWN',
       winner: false,
+      score: 0,
     })
 
     // Set the room's state
