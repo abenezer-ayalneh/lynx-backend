@@ -61,6 +61,7 @@ async function main() {
   ]
   await prisma.player.createMany({ data: players })
 
+  // I use this to make the ID sequence start from the last seeded data ID
   const sequenceInitializer: Record<string, number> = {
     words: words.length,
     players: players.length,
