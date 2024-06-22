@@ -62,7 +62,7 @@ export default class GameService {
   remove(id: number) {
     return this.prismaService.game.update({
       where: { id },
-      data: { deleted_at: new Date() },
+      data: { deleted_at: new Date(), status: false },
     })
   }
 

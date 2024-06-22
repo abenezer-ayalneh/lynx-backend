@@ -41,12 +41,14 @@ model Game {
   type       GameType
   status     Boolean   @default(true)
   owner_id   Int
+  room_id    Int?
   created_at DateTime  @default(now())
   updated_at DateTime? @updatedAt()
   deleted_at DateTime?
 
   Owner Player @relation(fields: [owner_id], references: [id])
   Words Word[]
+  Room  Room?  @relation(fields: [room_id], references: [id])
 
   @@map("games")
 }
@@ -64,4 +66,22 @@ model Player {
   Games Game[]
 
   @@map("players")
+}
+
+model Room {
+  id          Int       @id @default(autoincrement())
+  name        String
+  room_id     String
+  status      Boolean   @default(true)
+  max_players Int       @default(8)
+  rounds      Int       @default(5)
+  link        String
+  invite_text String
+  created_at  DateTime  @default(now())
+  updated_at  DateTime? @updatedAt()
+  deleted_at  DateTime?
+
+  Games Game[]
+
+  @@map("rooms")
 }

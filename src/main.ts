@@ -55,8 +55,8 @@ async function bootstrap() {
 
   // Enable CORS from allowed origins listed in .env
   app.enableCors({
-    origin: configService.get('CORS_ALLOWED_ORIGIN')
-      ? configService.get('CORS_ALLOWED_ORIGIN').split(',')
+    origin: configService.get('CORS_ALLOWED_ORIGINS')
+      ? configService.get('CORS_ALLOWED_ORIGINS').split(',')
       : false,
   })
 
