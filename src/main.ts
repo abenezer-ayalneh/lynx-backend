@@ -86,8 +86,11 @@ async function bootstrap() {
     }),
   })
 
-  colyseusServer.define('solo', injectDeps(app, SoloRoom))
+  colyseusServer.define('solo', injectDeps(app, SoloRoom), { gameType: 'SOLO' })
   colyseusServer.define('multiplayer', injectDeps(app, MultiplayerRoom))
+
+  // Starts listening for shutdown hooks
+  app.enableShutdownHooks()
 
   // Port on which the application will run
   const port = configService.get<number>('APP_PORT') || 3000

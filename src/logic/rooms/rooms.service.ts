@@ -14,7 +14,10 @@ export default class RoomsService {
   create(createRoomDto: CreateRoomDto) {
     // TODO generate an appropriate link with a unique string
     const link = `${this.configService.get<string>('APP_URL')}/some-unique-string`
-    return this.prismaService.room.create({ data: { ...createRoomDto, link } })
+    return this.prismaService.room.create({
+      data: { ...createRoomDto, link },
+      select: { id: true, room_id: true },
+    })
   }
 
   findAll() {
