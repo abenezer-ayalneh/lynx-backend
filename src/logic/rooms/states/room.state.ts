@@ -1,6 +1,6 @@
 import { Schema, type } from '@colyseus/schema'
 import Word from './word.state'
-import { RoomProps } from '../types/room-props.type'
+import { RoomProps } from '../types/solo-room-props.type'
 
 export default class RoomState extends Schema {
   @type('boolean') guessing: boolean
@@ -35,7 +35,6 @@ export default class RoomState extends Schema {
     totalRound,
     time,
     cycle,
-    numberOfPlayers,
     waitingCountdownTime,
     words,
     gameState,
@@ -49,7 +48,6 @@ export default class RoomState extends Schema {
     this.time = time
     this.cycle = cycle
     this.word = word
-    this.numberOfPlayers = numberOfPlayers
     this.waitingCountdownTime = waitingCountdownTime
     this.words = words
     this.gameState = gameState

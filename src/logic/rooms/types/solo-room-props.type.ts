@@ -8,7 +8,6 @@ export type RoomProps = {
   totalRound?: number
   time?: number
   cycle?: number
-  numberOfPlayers?: number
   waitingCountdownTime?: number
   gameState: 'START_COUNTDOWN' | 'ROUND_END' | 'GAME_STARTED' | 'GAME_END'
   winner: boolean

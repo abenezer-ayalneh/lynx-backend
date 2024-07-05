@@ -10,7 +10,7 @@ import {
 } from '../../commons/constants/game-time.constant'
 import PrismaService from '../../prisma/prisma.service'
 import Word from './states/word.state'
-import { RoomCreateProps } from './types/room-props.type'
+import { RoomCreateProps } from './types/solo-room-props.type'
 import GUESS from './constants/message.constant'
 import {
   FIRST_CYCLE_SCORE,
@@ -37,7 +37,12 @@ export default class SoloRoom extends Room<RoomState> {
    * @param data
    */
   async onCreate(data: RoomCreateProps) {
-    await this.createSoloGame(data)
+    // Create the solo game state
+    await this.createSoloGameState(data)
+
+    // Start game preparation countdown
+    this.createCountdown(START_COUNTDOWN)
+
     this.onMessage(GUESS, async (client, message: { guess: string }) => {
       const winner = await this.checkForWinner(message.guess)
       if (winner) {
@@ -70,7 +75,7 @@ export default class SoloRoom extends Room<RoomState> {
     await this.stopCurrentRoundOrGame()
   }
 
-  async createSoloGame(data: RoomCreateProps) {
+  async createSoloGameState(data: RoomCreateProps) {
     // Set the randomly selected word to the state object's `word` attribute
     const game = await this.prismaService.game.findUnique({
       where: { id: data.gameId },
@@ -87,7 +92,6 @@ export default class SoloRoom extends Room<RoomState> {
       totalRound: game.Words.length,
       time: FIRST_CYCLE_TIME,
       cycle: 1,
-      numberOfPlayers: 1,
       waitingCountdownTime: START_COUNTDOWN,
       words,
       gameState: 'START_COUNTDOWN',
@@ -97,9 +101,6 @@ export default class SoloRoom extends Room<RoomState> {
 
     // Set the room's state
     this.setState(roomState)
-
-    // Start game preparation countdown
-    this.createCountdown(START_COUNTDOWN)
   }
 
   /**

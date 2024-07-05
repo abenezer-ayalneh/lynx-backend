@@ -1,13 +1,26 @@
-import { Client, Room } from 'colyseus'
+import { Client, Delayed, Room } from 'colyseus'
 import { Injectable, Logger } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
 import PrismaService from '../../prisma/prisma.service'
 import MultiplayerRoomState from './states/multiplayer-room.state'
 import Player from './states/player.state'
+import {
+  FIRST_CYCLE_TIME,
+  MID_GAME_COUNTDOWN,
+  SECOND_CYCLE_TIME,
+  START_COUNTDOWN,
+  THIRD_CYCLE_TIME,
+} from '../../commons/constants/game-time.constant'
 
 @Injectable()
 export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
   logger: Logger
+
+  // For the game preparation visual(s) to be shown
+  public waitingCountdownInterval: Delayed
+
+  // This is the time elapsed for the game per cycle
+  public gameTimeInterval: Delayed
 
   constructor(private readonly prismaService: PrismaService) {
     super()
@@ -36,11 +49,24 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
    * Initiate a room and subscribe to the guess message type
    */
   async onCreate() {
-    const roomState = new MultiplayerRoomState()
-    this.setState(roomState)
-    this.onMessage('exit', (client) => {
-      client.leave()
+    // Create a multiplayer room state and set it as the room's state
+    const roomState = new MultiplayerRoomState({
+      word: undefined,
+      guessing: false,
+      round: 0,
+      totalRound: 5, // TODO change this to `game.Words.length`
+      time: FIRST_CYCLE_TIME,
+      cycle: 1,
+      waitingCountdownTime: START_COUNTDOWN,
+      words: [], // TODO get this from the DB
+      gameState: 'START_COUNTDOWN',
+      winner: null,
+      score: null,
+      gameStarted: false,
     })
+    this.setState(roomState)
+
+    this.registerMessages()
   }
 
   /**
@@ -56,9 +82,6 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
       !this.state.players.some((joinedPlayer) => joinedPlayer.id === auth.sub)
     ) {
       this.state.players.push(new Player(player.id, player.name, player.email))
-
-      // Let the game be started when at least 2 players are in the room
-      this.state.minPlayersSatisfied = this.state.players.length >= 2
     }
   }
 
@@ -73,5 +96,115 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
     if (indexToRemove >= 0) {
       this.state.players.splice(indexToRemove, 1)
     }
+  }
+
+  /**
+   * Delayed countdown
+   * @param timeoutTime
+   */
+  createCountdown(timeoutTime: number) {
+    this.waitingCountdownInterval = this.clock.setInterval(() => {
+      this.state.waitingCountdownTime -= 1
+    }, 1000)
+
+    this.clock.setTimeout(
+      () => {
+        this.state.gameState = 'GAME_STARTED'
+        this.firstCycle()
+        this.waitingCountdownInterval.clear()
+      },
+      (timeoutTime + 1) * 1000,
+    )
+  }
+
+  /**
+   * Run the first cycle of the current game round
+   */
+  firstCycle() {
+    this.state.time = FIRST_CYCLE_TIME // Set time to the first time constant
+    this.state.cycle = 1 // Set the cycle number
+    this.state.winner = null // Reset the winner state
+    this.state.round += 1 // Goto the next round
+    this.state.word = this.state.words[this.state.round - 1] // Choose the word to be played from the words list
+    this.gameTimeInterval = this.clock.setInterval(() => {
+      this.state.time -= 1
+
+      if (this.state.time <= 0) {
+        this.state.time = SECOND_CYCLE_TIME
+        this.state.word.cues[3].shown = true
+        this.gameTimeInterval.clear()
+        this.secondCycle()
+      }
+    }, 1000)
+  }
+
+  /**
+   * Run the second cycle of the current game round
+   */
+  secondCycle() {
+    this.state.cycle = 2
+    this.gameTimeInterval = this.clock.setInterval(() => {
+      this.state.time -= 1
+
+      if (this.state.time <= 0) {
+        this.state.time = THIRD_CYCLE_TIME
+        this.state.word.cues[4].shown = true
+        this.gameTimeInterval.clear()
+        this.thirdCycle()
+      }
+    }, 1000)
+  }
+
+  /**
+   * Run the third cycle of the current game round.
+   * Plus decides whether to end the round or the whole game based on
+   * remaining words
+   */
+  thirdCycle() {
+    this.state.cycle = 3
+    this.gameTimeInterval = this.clock.setInterval(async () => {
+      this.state.time -= 1
+
+      if (this.state.time <= 0) {
+        await this.stopCurrentRoundOrGame()
+        this.gameTimeInterval.clear()
+      }
+    }, 1000)
+  }
+
+  private async stopCurrentRoundOrGame() {
+    this.state.gameState = 'ROUND_END'
+    this.state.waitingCountdownTime = MID_GAME_COUNTDOWN
+    this.gameTimeInterval.clear()
+
+    // Game is not done but the current round is
+    if (this.state.words.length > this.state.round) {
+      this.createCountdown(MID_GAME_COUNTDOWN)
+    } else {
+      this.waitingCountdownInterval = this.clock.setInterval(() => {
+        this.state.waitingCountdownTime -= 1
+
+        if (this.state.waitingCountdownTime <= 0) {
+          this.state.gameState = 'GAME_END'
+          this.state.time = 0
+          this.state.word = undefined
+          this.waitingCountdownInterval.clear()
+        }
+      }, 1000)
+    }
+  }
+
+  private registerMessages() {
+    this.onMessage('exit', (client) => {
+      client.leave()
+    })
+
+    this.onMessage('start-game', () => this.startGame())
+  }
+
+  startGame() {
+    // Start game preparation countdown
+    this.createCountdown(START_COUNTDOWN)
+    this.state.gameStarted = true
   }
 }
