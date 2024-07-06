@@ -10,14 +10,18 @@ import {
 import RoomsService from './rooms.service'
 import CreateRoomDto from './dto/create-room.dto'
 import UpdateRoomDto from './dto/update-room.dto'
+import ActiveUser from '../../iam/decorators/active-user.decorator'
 
 @Controller('rooms')
 export default class RoomsController {
   constructor(private readonly roomsService: RoomsService) {}
 
   @Post()
-  create(@Body() createRoomDto: CreateRoomDto) {
-    return this.roomsService.create(createRoomDto)
+  create(
+    @Body() createRoomDto: CreateRoomDto,
+    @ActiveUser('sub') playerId: string,
+  ) {
+    return this.roomsService.create(createRoomDto, +playerId)
   }
 
   @Get()

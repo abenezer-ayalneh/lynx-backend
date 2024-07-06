@@ -11,6 +11,7 @@ import {
   START_COUNTDOWN,
   THIRD_CYCLE_TIME,
 } from '../../commons/constants/game-time.constant'
+import Word from './states/word.state'
 
 @Injectable()
 export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
@@ -172,6 +173,31 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
     }, 1000)
   }
 
+  /**
+   * Prepare the necessary steps needed for a multiplayer game to start
+   */
+  async startGame() {
+    // Fetch the associated game with the current game
+    const room = await this.prismaService.room.findUnique({
+      where: { room_id: this.roomId },
+    })
+    if (room) {
+      const game = await this.prismaService.game.findFirst({
+        where: { room_id: room.id },
+        include: { Words: true },
+      })
+
+      // Set the words state variable
+      if (game) {
+        this.state.words = game.Words.map((word) => new Word(word))
+      }
+
+      // Start game preparation countdown
+      this.createCountdown(START_COUNTDOWN)
+      this.state.gameStarted = true
+    }
+  }
+
   private async stopCurrentRoundOrGame() {
     this.state.gameState = 'ROUND_END'
     this.state.waitingCountdownTime = MID_GAME_COUNTDOWN
@@ -200,11 +226,5 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
     })
 
     this.onMessage('start-game', () => this.startGame())
-  }
-
-  startGame() {
-    // Start game preparation countdown
-    this.createCountdown(START_COUNTDOWN)
-    this.state.gameStarted = true
   }
 }

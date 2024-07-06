@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common'
 import PrismaService from 'src/prisma/prisma.service'
 import CreateGameDto from './dto/create-game.dto'
-import { TOTAL_GAME_ROUNDS } from '../commons/constants/game-time.constant'
+import { TOTAL_GAME_ROUNDS } from '../../commons/constants/game-time.constant'
 
 @Injectable()
 export default class GameService {
@@ -28,11 +28,17 @@ export default class GameService {
         Words: {
           connect: randomWordIds,
         },
+        Room: {
+          connect: createGameDto.room_id
+            ? { id: createGameDto.room_id }
+            : undefined,
+        },
       },
       select: {
         id: true,
         type: true,
         created_at: true,
+        room_id: true,
       },
     })
   }

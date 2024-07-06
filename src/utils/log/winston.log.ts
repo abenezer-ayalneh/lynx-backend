@@ -13,6 +13,7 @@ const loggerOptions: LoggerOptions = {
       format: format.combine(
         format.timestamp(),
         format.ms(),
+        format.errors({ stack: true }),
         nestWinstonModuleUtilities.format.nestLike('Lynx', {
           colors: true,
           prettyPrint: true,
@@ -28,6 +29,7 @@ const loggerOptions: LoggerOptions = {
       format: format.combine(
         format.timestamp(),
         format.ms(),
+        format.errors({ stack: true }),
         nestWinstonModuleUtilities.format.nestLike('Lynx', {
           prettyPrint: true,
         }),
@@ -44,6 +46,7 @@ const loggerOptions: LoggerOptions = {
       format: format.combine(
         format.timestamp(),
         format.ms(),
+        format.errors({ stack: true }),
         nestWinstonModuleUtilities.format.nestLike('Lynx', {
           prettyPrint: true,
         }),

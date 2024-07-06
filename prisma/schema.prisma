@@ -71,7 +71,7 @@ model Player {
 model Room {
   id          Int       @id @default(autoincrement())
   name        String
-  room_id     String
+  room_id     String    @unique()
   status      Boolean   @default(true)
   max_players Int       @default(8)
   rounds      Int       @default(5)

@@ -3,21 +3,30 @@ import { ConfigService } from '@nestjs/config'
 import CreateRoomDto from './dto/create-room.dto'
 import UpdateRoomDto from './dto/update-room.dto'
 import PrismaService from '../../prisma/prisma.service'
+import GameService from '../games/games.service'
 
 @Injectable()
 export default class RoomsService {
   constructor(
     private readonly prismaService: PrismaService,
     private readonly configService: ConfigService,
+    private readonly gameService: GameService,
   ) {}
 
-  create(createRoomDto: CreateRoomDto) {
+  async create(createRoomDto: CreateRoomDto, playerId: number) {
     // TODO generate an appropriate link with a unique string
     const link = `${this.configService.get<string>('APP_URL')}/some-unique-string`
-    return this.prismaService.room.create({
+    const room = await this.prismaService.room.create({
       data: { ...createRoomDto, link },
       select: { id: true, room_id: true },
     })
+
+    await this.gameService.create(
+      { type: 'MULTIPLAYER', room_id: room.id },
+      playerId,
+    )
+
+    return room
   }
 
   findAll() {

@@ -5,7 +5,6 @@ import { redisStore } from 'cache-manager-redis-yet'
 import type { RedisClientOptions } from 'redis'
 import { APP_FILTER } from '@nestjs/core'
 import LogicModule from './logic/logic.module'
-import GameModule from './games/games.module'
 import WebsocketGateway from './websocket/websocket.gateway'
 import WebsocketModule from './websocket/websocket.module'
 import AppController from './app.controller'
@@ -30,7 +29,6 @@ import GlobalExceptionFilter from './utils/filters/global-exception.filter'
     WebsocketModule,
     IamModule,
     PrismaModule,
-    GameModule,
     LogicModule,
   ],
   controllers: [AppController],

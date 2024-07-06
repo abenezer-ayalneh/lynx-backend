@@ -3,9 +3,11 @@ import {
   Catch,
   ExceptionFilter,
   HttpException,
+  HttpStatus,
   Logger,
 } from '@nestjs/common'
 import { Response } from 'express'
+import { PrismaClientValidationError } from '@prisma/client/runtime/library'
 import ValidationException from '../exceptions/validation.exception'
 import FilterResponseInterface from './interfaces/filter-response.interface'
 
@@ -18,10 +20,9 @@ export default class GlobalExceptionFilter implements ExceptionFilter {
   constructor(private readonly logger: Logger) {}
 
   catch(exception: unknown, host: ArgumentsHost) {
-    // Log the error before responding
-    this.logger.error({ caughtException: exception })
     const ctx = host.switchToHttp()
     const response = ctx.getResponse<Response>()
+    let stack = null
 
     // Create the default response data structure
     const responseData: FilterResponseInterface = {
@@ -38,7 +39,16 @@ export default class GlobalExceptionFilter implements ExceptionFilter {
       responseData.data = exception.getResponse()
       responseData.statusCode = exception.getStatus()
       responseData.error = 'HTTP Error'
+      stack = exception.stack
+    } else if (exception instanceof PrismaClientValidationError) {
+      responseData.data = exception.message
+      responseData.statusCode = HttpStatus.INTERNAL_SERVER_ERROR
+      responseData.error = 'Database Error'
+      stack = exception.stack
     }
+
+    // Log the error before responding
+    this.logger.error({ caughtException: exception }, stack)
 
     response.status(responseData.statusCode).json(responseData)
   }
