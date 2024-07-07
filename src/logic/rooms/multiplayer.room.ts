@@ -17,10 +17,14 @@ import Word from './states/word.state'
 export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
   logger: Logger
 
-  // For the game preparation visual(s) to be shown
+  /**
+   * For the game preparation visual(s) to be shown
+   */
   public waitingCountdownInterval: Delayed
 
-  // This is the time elapsed for the game per cycle
+  /**
+   * The time elapsed for the game per cycle
+   */
   public gameTimeInterval: Delayed
 
   constructor(private readonly prismaService: PrismaService) {
@@ -28,7 +32,10 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
     this.logger = new Logger('MultiplayerRoom')
   }
 
-  // Validate client auth token before joining/creating the room
+  /**
+   * Validate client auth token before joining/creating the room
+   * @param token
+   */
   static async onAuth(token: string) {
     if (!token) {
       return false
@@ -198,6 +205,25 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
     }
   }
 
+  /**
+   * Handle the guess message
+   * @param client
+   * @param message
+   * @private
+   */
+  async guess(client: Client, message: { guess: string }) {
+    const isWinner = await this.checkForWinner(message.guess)
+
+    if (isWinner) {
+      this.state.winner = client.sessionId
+      await this.stopCurrentRoundOrGame()
+    }
+  }
+
+  /**
+   * To put the currently running round or game to halt based on some conditions
+   * @private
+   */
   private async stopCurrentRoundOrGame() {
     this.state.gameState = 'ROUND_END'
     this.state.waitingCountdownTime = MID_GAME_COUNTDOWN
@@ -220,11 +246,36 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
     }
   }
 
-  private registerMessages() {
-    this.onMessage('exit', (client) => {
-      client.leave()
+  /**
+   * Check if the guessed word matches the currently being played word's key
+   * @param guess
+   * @private
+   */
+  private async checkForWinner(guess: string) {
+    // Get the currently being played word
+    const wordBeingGuessed = await this.prismaService.word.findUnique({
+      where: { id: this.state.word.id },
     })
 
+    if (wordBeingGuessed) {
+      // Cast to lowercase for case-insensitive comparison
+      return wordBeingGuessed.key.toLowerCase() === guess.toLowerCase()
+    }
+
+    return false
+  }
+
+  /**
+   * Subscribe to necessary websocket messages
+   * @private
+   */
+  private registerMessages() {
+    this.onMessage('exit', (client) => client.leave())
+
     this.onMessage('start-game', () => this.startGame())
+
+    this.onMessage('guess', (client, message: { guess: string }) =>
+      this.guess(client, message),
+    )
   }
 }

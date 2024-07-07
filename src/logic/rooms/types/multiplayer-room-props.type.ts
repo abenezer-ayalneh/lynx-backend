@@ -10,7 +10,7 @@ export type MultiplayerRoomProps = {
   cycle?: number // The current word's cycle (i.e. how many cue words are displayed after the initial 3)
   waitingCountdownTime?: number // Countdown timer for the waiting windows
   gameState: 'START_COUNTDOWN' | 'ROUND_END' | 'GAME_STARTED' | 'GAME_END' // The state the game is currently in
-  winner?: number // The player ID of the winner player for the game
-  score?: Record<number, number> // Scores of the players (key is ID and value is score)
+  winner?: string // The player ID of the winner player for the game
+  score?: Record<string, number> // Scores of the players (key is ID and value is score)
   gameStarted?: boolean // Indicator for game start state
 }

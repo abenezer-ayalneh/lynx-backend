@@ -23,9 +23,9 @@ export default class MultiplayerRoomState extends Schema {
   @type('string')
   gameState: 'START_COUNTDOWN' | 'ROUND_END' | 'GAME_STARTED' | 'GAME_END' // The state the game is currently in
 
-  @type('number') winner: number | null // The player ID of the winner player for the game
+  @type('string') winner: string | null // The player ID of the winner player for the game
 
-  @type('number') score: Record<number, number> // Scores of the players (key is ID and value is score)
+  @type({ map: 'number' }) score: Record<string, number> // Scores of the players (key is ID and value is score)
 
   @type('boolean') gameStarted: boolean // Indicator for game start state
 
