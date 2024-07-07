@@ -1,4 +1,4 @@
-import { ArraySchema, Schema, type } from '@colyseus/schema'
+import { ArraySchema, MapSchema, Schema, type } from '@colyseus/schema'
 import Player from './player.state'
 import Word from './word.state'
 import { MultiplayerRoomProps } from '../types/multiplayer-room-props.type'
@@ -25,7 +25,7 @@ export default class MultiplayerRoomState extends Schema {
 
   @type('string') winner: string | null // The player ID of the winner player for the game
 
-  @type({ map: 'number' }) score: Record<string, number> // Scores of the players (key is ID and value is score)
+  @type({ map: 'number' }) score = new MapSchema<number>() // Scores of the players (key is ID and value is score)
 
   @type('boolean') gameStarted: boolean // Indicator for game start state
 

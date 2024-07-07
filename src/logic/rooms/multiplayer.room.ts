@@ -1,6 +1,7 @@
 import { Client, Delayed, Room } from 'colyseus'
 import { Injectable, Logger } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
+import { MapSchema } from '@colyseus/schema'
 import PrismaService from '../../prisma/prisma.service'
 import MultiplayerRoomState from './states/multiplayer-room.state'
 import Player from './states/player.state'
@@ -12,6 +13,11 @@ import {
   THIRD_CYCLE_TIME,
 } from '../../commons/constants/game-time.constant'
 import Word from './states/word.state'
+import {
+  FIRST_CYCLE_SCORE,
+  SECOND_CYCLE_SCORE,
+  THIRD_CYCLE_SCORE,
+} from './constants/score.constant'
 
 @Injectable()
 export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
@@ -69,7 +75,7 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
       words: [], // TODO get this from the DB
       gameState: 'START_COUNTDOWN',
       winner: null,
-      score: null,
+      score: new MapSchema<number>(),
       gameStarted: false,
     })
     this.setState(roomState)
@@ -84,6 +90,9 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
     const player = await this.prismaService.player.findUnique({
       where: { id: auth.sub },
     })
+
+    // Start the sessions score as 0
+    this.state.score.set(client.sessionId, 0)
 
     // Add unique players into the room's 'players' state
     if (
@@ -216,6 +225,7 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
 
     if (isWinner) {
       this.state.winner = client.sessionId
+      this.addScoreToWinner(client.sessionId)
       await this.stopCurrentRoundOrGame()
     }
   }
@@ -277,5 +287,28 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
     this.onMessage('guess', (client, message: { guess: string }) =>
       this.guess(client, message),
     )
+  }
+
+  private addScoreToWinner(sessionId: string) {
+    let score = 0
+
+    switch (this.state.cycle) {
+      case 1:
+        score = FIRST_CYCLE_SCORE
+        break
+      case 2:
+        score = SECOND_CYCLE_SCORE
+        break
+      case 3:
+        score = THIRD_CYCLE_SCORE
+        break
+      default:
+        score = 0
+    }
+
+    if (this.state.score.has(sessionId)) {
+      const currentScore = this.state.score.get(sessionId)
+      this.state.score.set(sessionId, currentScore + score)
+    }
   }
 }

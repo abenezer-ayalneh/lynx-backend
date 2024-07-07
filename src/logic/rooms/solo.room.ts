@@ -15,6 +15,7 @@ import GUESS from './constants/message.constant'
 import {
   FIRST_CYCLE_SCORE,
   SECOND_CYCLE_SCORE,
+  THIRD_CYCLE_SCORE,
 } from './constants/score.constant'
 
 @Injectable()
@@ -65,7 +66,7 @@ export default class SoloRoom extends Room<RoomState> {
         playerScore = SECOND_CYCLE_SCORE
         break
       case 3:
-        playerScore = THIRD_CYCLE_TIME
+        playerScore = THIRD_CYCLE_SCORE
         break
       default:
         playerScore = 0
