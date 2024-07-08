@@ -18,6 +18,11 @@ import {
   SECOND_CYCLE_SCORE,
   THIRD_CYCLE_SCORE,
 } from './constants/score.constant'
+import {
+  MAX_PLAYERS_PER_ROOM_LIMIT,
+  MAX_ROUNDS_PER_GAME_LIMIT,
+} from '../../commons/constants/common.constant'
+import { MultiplayerRoomCreateProps } from './types/multiplayer-room-props.type'
 
 @Injectable()
 export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
@@ -62,13 +67,13 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
   /**
    * Initiate a room and subscribe to the guess message type
    */
-  async onCreate() {
+  async onCreate(data?: MultiplayerRoomCreateProps) {
     // Create a multiplayer room state and set it as the room's state
     const roomState = new MultiplayerRoomState({
       word: undefined,
       guessing: false,
       round: 0,
-      totalRound: 5, // TODO change this to `game.Words.length`
+      totalRound: MAX_ROUNDS_PER_GAME_LIMIT,
       time: FIRST_CYCLE_TIME,
       cycle: 1,
       waitingCountdownTime: START_COUNTDOWN,
@@ -80,6 +85,19 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
     })
     this.setState(roomState)
 
+    // Set the maximum number of clients that can connect to the room
+    this.maxClients = MAX_PLAYERS_PER_ROOM_LIMIT
+
+    // Set room metadata for when list of rooms is shown to the players
+    await this.setMetadata({
+      numberOfPlayers: 0,
+      totalRounds: MAX_ROUNDS_PER_GAME_LIMIT,
+      currentRound: 0,
+      name: data?.name,
+      numberOfMaxPlayers: MAX_PLAYERS_PER_ROOM_LIMIT,
+    })
+
+    // Register(subscribe) to necessary messages/events
     this.registerMessages()
   }
 
@@ -99,6 +117,12 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
       !this.state.players.some((joinedPlayer) => joinedPlayer.id === auth.sub)
     ) {
       this.state.players.push(new Player(player.id, player.name, player.email))
+
+      // Increment the number of players by one
+      await this.setMetadata({
+        ...this.metadata,
+        numberOfPlayers: this.metadata.numberOfPlayers + 1,
+      })
     }
   }
 
@@ -106,12 +130,18 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
    *  Triggered when a player leaves the room
    * @param client
    */
-  onLeave(client: Client) {
+  async onLeave(client: Client) {
     const indexToRemove = this.state.players.findIndex(
       (player) => player.id === client.auth.sub,
     )
     if (indexToRemove >= 0) {
       this.state.players.splice(indexToRemove, 1)
+
+      // Decrement the number of players by one
+      await this.setMetadata({
+        ...this.metadata,
+        numberOfPlayers: this.metadata.numberOfPlayers - 1,
+      })
     }
   }
 
@@ -290,7 +320,7 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
   }
 
   private addScoreToWinner(sessionId: string) {
-    let score = 0
+    let score: number
 
     switch (this.state.cycle) {
       case 1:
