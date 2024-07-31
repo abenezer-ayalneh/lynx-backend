@@ -57,7 +57,7 @@ export default class SoloRoom extends Room<RoomState> {
    */
   async handleGameWon() {
     this.state.winner = true
-    let playerScore = 0
+    let playerScore: number
     switch (this.state.cycle) {
       case 1:
         playerScore = FIRST_CYCLE_SCORE
@@ -72,7 +72,8 @@ export default class SoloRoom extends Room<RoomState> {
         playerScore = 0
     }
 
-    this.state.score += playerScore
+    this.state.totalScore += playerScore
+    this.state.score = playerScore
     await this.stopCurrentRoundOrGame()
   }
 
@@ -98,6 +99,7 @@ export default class SoloRoom extends Room<RoomState> {
       gameState: 'START_COUNTDOWN',
       winner: false,
       score: 0,
+      totalScore: 0,
     })
 
     // Set the room's state
@@ -132,6 +134,7 @@ export default class SoloRoom extends Room<RoomState> {
     this.state.winner = false // Reset the winner state
     this.state.round += 1 // Goto the next round
     this.state.word = this.state.words[this.state.round - 1] // Choose the word to be played from the words list
+    this.state.score = 0
     this.gameTimeInterval = this.clock.setInterval(() => {
       this.state.time -= 1
 

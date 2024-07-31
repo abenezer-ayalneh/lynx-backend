@@ -12,6 +12,7 @@ export type RoomProps = {
   gameState: 'START_COUNTDOWN' | 'ROUND_END' | 'GAME_STARTED' | 'GAME_END'
   winner: boolean
   score: number
+  totalScore: number
 }
 
 export type RoomCreateProps = {

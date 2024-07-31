@@ -111,6 +111,7 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
 
     // Start the sessions score as 0
     this.state.score.set(client.sessionId, 0)
+    this.state.totalScore.set(client.sessionId, 0)
 
     // Add unique players into the room's 'players' state
     if (
@@ -173,6 +174,9 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
     this.state.winner = null // Reset the winner state
     this.state.round += 1 // Goto the next round
     this.state.word = this.state.words[this.state.round - 1] // Choose the word to be played from the words list
+    Object.keys(this.state.score).forEach((key) => {
+      this.state.score.set(key, 0)
+    })
     this.gameTimeInterval = this.clock.setInterval(() => {
       this.state.time -= 1
 
@@ -337,8 +341,12 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
     }
 
     if (this.state.score.has(sessionId)) {
-      const currentScore = this.state.score.get(sessionId)
-      this.state.score.set(sessionId, currentScore + score)
+      this.state.score.set(sessionId, score)
+    }
+
+    if (this.state.totalScore.has(sessionId)) {
+      const currentScore = this.state.totalScore.get(sessionId)
+      this.state.totalScore.set(sessionId, currentScore + score)
     }
   }
 }

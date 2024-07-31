@@ -27,6 +27,8 @@ export default class MultiplayerRoomState extends Schema {
 
   @type({ map: 'number' }) score = new MapSchema<number>() // Scores of the players (key is ID and value is score)
 
+  @type({ map: 'number' }) totalScore = new MapSchema<number>() // Total scores of the players (key is ID and value is total score)
+
   @type('boolean') gameStarted: boolean // Indicator for game start state
 
   words: Word[] // All the words selected for this game

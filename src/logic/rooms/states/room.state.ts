@@ -26,6 +26,8 @@ export default class RoomState extends Schema {
 
   @type('number') score: number
 
+  @type('number') totalScore: number
+
   words: Word[]
 
   constructor({
@@ -40,6 +42,7 @@ export default class RoomState extends Schema {
     gameState,
     winner,
     score,
+    totalScore,
   }: RoomProps) {
     super()
     this.guessing = guessing
@@ -53,5 +56,6 @@ export default class RoomState extends Schema {
     this.gameState = gameState
     this.winner = winner
     this.score = score
+    this.totalScore = totalScore
   }
 }
