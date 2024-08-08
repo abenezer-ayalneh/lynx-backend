@@ -142,6 +142,7 @@ export default class AuthenticationService {
         email: true,
         name: true,
         status: true,
+        score: true,
       },
     })
   }

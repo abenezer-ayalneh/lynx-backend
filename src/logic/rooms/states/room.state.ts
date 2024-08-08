@@ -30,6 +30,8 @@ export default class RoomState extends Schema {
 
   words: Word[]
 
+  playerId: number
+
   constructor({
     word,
     guessing,

@@ -1,5 +1,6 @@
-import { Delayed, Room } from 'colyseus'
+import { Client, Delayed, Room } from 'colyseus'
 import { Injectable, Logger } from '@nestjs/common'
+import { JwtService } from '@nestjs/jwt'
 import RoomState from './states/room.state'
 import {
   FIRST_CYCLE_TIME,
@@ -34,12 +35,37 @@ export default class SoloRoom extends Room<RoomState> {
   }
 
   /**
+   * Validate client auth token before joining/creating the room
+   * @param token
+   */
+  static async onAuth(token: string) {
+    if (!token) {
+      return false
+    }
+
+    const jwtService = new JwtService()
+    try {
+      return await jwtService.verifyAsync(token, {
+        secret: process.env.JWT_SECRET,
+        audience: process.env.JWT_TOKEN_AUDIENCE,
+        issuer: process.env.JWT_TOKEN_ISSUER,
+      })
+    } catch (e) {
+      return false
+    }
+  }
+
+  /**
    * Initiate a room and subscribe to the guess message type
    * @param data
    */
   async onCreate(data: RoomCreateProps) {
     // Create the solo game state
     await this.createSoloGameState(data)
+
+    // Set the player's ID into the state variable for later use. But it is not
+    // sent via state update to the frontend
+    this.state.playerId = data.playerId
 
     // Start game preparation countdown
     this.createCountdown(START_COUNTDOWN)
@@ -181,6 +207,17 @@ export default class SoloRoom extends Room<RoomState> {
     }, 1000)
   }
 
+  // When client successfully join the room
+  async onJoin(client: Client, options: any, auth: any) {
+    const player = await this.prismaService.player.findUnique({
+      where: { id: auth.sub },
+    })
+
+    if (player) {
+      this.state.playerId = player.id
+    }
+  }
+
   /**
    * Check if the guessed word matches the currently being played word's key
    * @param guess
@@ -217,9 +254,17 @@ export default class SoloRoom extends Room<RoomState> {
           this.state.time = 0
           this.state.word = undefined
           this.waitingCountdownInterval.clear()
+          this.setPlayerScoreOnDatabase(this.state.totalScore)
         }
       }, 1000)
     }
+  }
+
+  private async setPlayerScoreOnDatabase(score: number) {
+    await this.prismaService.player.update({
+      where: { id: this.state.playerId },
+      data: { score: { increment: score } },
+    })
   }
 
   // private async checkForWinnerWord(word: string) {}
@@ -227,8 +272,6 @@ export default class SoloRoom extends Room<RoomState> {
   // (optional) Validate client auth token before joining/creating the room
   // static async onAuth(token: string, request: IncomingMessage) {}
   //
-  // // When client successfully join the room
-  // onJoin(client: Client, options: any, auth: any) {}
   //
   // // When a client leaves the room
   // onLeave(client: Client, consented: boolean) {
