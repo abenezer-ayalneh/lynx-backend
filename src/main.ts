@@ -83,6 +83,7 @@ async function bootstrap() {
   const colyseusServer = new Server({
     transport: new WebSocketTransport({
       server: app.getHttpServer(),
+      maxPayload: 1024 * 1024, // 1MB Max Payload
     }),
   })
 

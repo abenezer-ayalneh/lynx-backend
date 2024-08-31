@@ -1,4 +1,4 @@
-import { Client, Delayed, Room } from 'colyseus'
+import { Client, Delayed, logger, Room } from 'colyseus'
 import { Injectable, Logger } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
 import { MapSchema } from '@colyseus/schema'
@@ -23,6 +23,7 @@ import {
   MAX_ROUNDS_PER_GAME_LIMIT,
 } from '../../commons/constants/common.constant'
 import { MultiplayerRoomCreateProps } from './types/multiplayer-room-props.type'
+import GameService from '../games/games.service'
 
 @Injectable()
 export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
@@ -38,7 +39,10 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
    */
   public gameTimeInterval: Delayed
 
-  constructor(private readonly prismaService: PrismaService) {
+  constructor(
+    private readonly prismaService: PrismaService,
+    private readonly gameService: GameService,
+  ) {
     super()
     this.logger = new Logger('MultiplayerRoom')
   }
@@ -102,14 +106,14 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
   }
 
   /**
-   * Triggered when a player successfully join the room
+   * Triggered when a player successfully joins the room
    */
   async onJoin(client: Client, options: any, auth: { sub: number }) {
     const player = await this.prismaService.player.findUnique({
       where: { id: auth.sub },
     })
 
-    // Start the sessions score as 0
+    // Start the session's score as 0
     this.state.score.set(client.sessionId, 0)
     this.state.totalScore.set(client.sessionId, 0)
 
@@ -125,6 +129,10 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
         numberOfPlayers: this.metadata.numberOfPlayers + 1,
       })
     }
+
+    logger.info(
+      `Player joined. playerId: ${player.id}, sessionId: ${client.sessionId}`,
+    )
   }
 
   /**
@@ -174,6 +182,13 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
     this.state.winner = null // Reset the winner state
     this.state.round += 1 // Goto the next round
     this.state.word = this.state.words[this.state.round - 1] // Choose the word to be played from the words list
+    this.state.score.forEach((_, key) => {
+      this.state.score.set(key, 0)
+    })
+    this.setMetadata({
+      ...this.metadata,
+      currentRound: this.metadata.currentRound + 1,
+    })
     Object.keys(this.state.score).forEach((key) => {
       this.state.score.set(key, 0)
     })
@@ -234,6 +249,7 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
     if (room) {
       const game = await this.prismaService.game.findFirst({
         where: { room_id: room.id },
+        orderBy: { created_at: 'desc' },
         include: { Words: true },
       })
 
@@ -245,6 +261,37 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
       // Start game preparation countdown
       this.createCountdown(START_COUNTDOWN)
       this.state.gameStarted = true
+      await this.setMetadata({
+        ...this.metadata,
+        currentRound: 1,
+      })
+    }
+  }
+
+  /**
+   * Prepare and initiate game restart
+   */
+  async restartGame() {
+    this.state.guessing = false
+    this.state.round = 0
+    this.state.time = START_COUNTDOWN
+    this.state.cycle = 1
+    this.state.word = undefined
+    this.state.winner = null
+    this.state.gameState = 'START_COUNTDOWN'
+    this.state.waitingCountdownTime = 3
+    this.state.gameStarted = false
+    this.state.words = []
+
+    const room = await this.prismaService.room.findUnique({
+      where: { room_id: this.roomId },
+    })
+
+    if (room) {
+      await this.gameService.create(
+        { type: 'MULTIPLAYER', room_id: room.id },
+        this.state.players[0].id,
+      )
     }
   }
 
@@ -318,9 +365,19 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
 
     this.onMessage('start-game', () => this.startGame())
 
+    this.onMessage('restart-game', () => this.restartGame())
+
     this.onMessage('guess', (client, message: { guess: string }) =>
       this.guess(client, message),
     )
+
+    this.onMessage('talk', (client, payload) => {
+      let preparedAudioData = payload.split(';')
+      preparedAudioData[0] = 'data:audio/ogg;'
+      preparedAudioData = preparedAudioData[0] + preparedAudioData[1]
+
+      this.broadcast('talk', preparedAudioData, { except: client })
+    })
   }
 
   private addScoreToWinner(sessionId: string) {
