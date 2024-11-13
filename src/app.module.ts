@@ -12,6 +12,7 @@ import AppService from './app.service'
 import IamModule from './iam/iam.module'
 import PrismaModule from './prisma/prisma.module'
 import GlobalExceptionFilter from './utils/filters/global-exception.filter'
+import MailModule from './mail/mail.module'
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import GlobalExceptionFilter from './utils/filters/global-exception.filter'
     IamModule,
     PrismaModule,
     LogicModule,
+    MailModule,
   ],
   controllers: [AppController],
   providers: [

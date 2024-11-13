@@ -1,5 +1,7 @@
 import {
+  IsArray,
   IsBoolean,
+  IsEmail,
   IsNotEmpty,
   IsNumber,
   IsOptional,
@@ -36,4 +38,14 @@ export default class CreateRoomDto {
   @IsString()
   @IsNotEmpty()
   invite_text: string
+
+  @IsEmail(
+    {},
+    {
+      each: true,
+      message: 'Each email must be a valid email address.',
+    },
+  )
+  @IsArray({ message: 'Emails must be an array.' })
+  emails: string[]
 }
