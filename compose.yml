@@ -4,14 +4,11 @@ services:
     container_name: lynx-postgres
     restart: unless-stopped
     env_file:
-      - .env
-    environment:
-      POSTGRES_USER: ${DATABASE_USERNAME}
-      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
+      - ./.env
     volumes:
       - ./data/postgresql:/var/lib/postgresql/data
     ports:
-      - ${DATABASE_PORT}:5432
+      - ${POSTGRES_PORT}:5432
 
   redis:
     image: redis:7.2.5
