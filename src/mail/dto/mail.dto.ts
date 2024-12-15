@@ -16,6 +16,7 @@ export default class SendMailDto {
     },
   )
   @IsArray({ message: 'Emails must be an array.' })
+  @IsOptional({ each: true })
   to: string[]
 
   @IsEmail({}, { message: 'From address should be a valid email' })
