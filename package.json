@@ -45,6 +45,7 @@
     "class-validator": "^0.14.1",
     "colyseus": "^0.15.17",
     "express": "^4.19.2",
+    "express-basic-auth": "^1.2.1",
     "handlebars": "^4.7.8",
     "ioredis": "^5.4.1",
     "nest-winston": "^1.9.6",

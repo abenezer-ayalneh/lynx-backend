@@ -10,6 +10,8 @@ import { WebSocketTransport } from '@colyseus/ws-transport'
 import { Room, Server } from 'colyseus'
 import { ConfigService } from '@nestjs/config'
 import { playground } from '@colyseus/playground'
+import { monitor } from '@colyseus/monitor'
+import * as basicAuth from 'express-basic-auth'
 import AppModule from './app.module'
 import ValidationException from './utils/exceptions/validation.exception'
 import winstonLoggerInstance from './utils/log/winston.log'
@@ -45,7 +47,20 @@ async function bootstrap() {
   })
 
   // Colyseus playground
-  app.use('/', playground)
+  app.use('/playground', playground)
+
+  // Colyseus monitor
+  const basicAuthMiddleware = basicAuth({
+    // list of users and passwords
+    users: {
+      admin: 'admin',
+    },
+    // sends WWW-Authenticate header, which will prompt the user to fill
+    // credentials in
+    challenge: true,
+  })
+
+  app.use('/monitor', basicAuthMiddleware, monitor())
 
   // Config service to access .env file
   const configService = app.get(ConfigService)
