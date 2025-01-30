@@ -41,14 +41,12 @@ model Game {
   type       GameType
   status     Boolean   @default(true)
   owner_id   Int
-  room_id    Int?
   created_at DateTime  @default(now())
   updated_at DateTime? @updatedAt()
   deleted_at DateTime?
 
   Owner Player @relation(fields: [owner_id], references: [id])
   Words Word[]
-  Room  Room?  @relation(fields: [room_id], references: [id])
 
   @@map("games")
 }
@@ -64,25 +62,40 @@ model Player {
   updated_at DateTime? @updatedAt()
   deleted_at DateTime?
 
-  Games Game[]
+  Games      Game[]
+  OwnedRooms ScheduledGame[]
 
   @@map("players")
 }
 
-model Room {
-  id          Int       @id @default(autoincrement())
-  name        String
-  room_id     String    @unique()
-  status      Boolean   @default(true)
-  max_players Int       @default(8)
-  rounds      Int       @default(5)
-  link        String
-  invite_text String
-  created_at  DateTime  @default(now())
-  updated_at  DateTime? @updatedAt()
-  deleted_at  DateTime?
+model ScheduledGame {
+  id              Int                   @id @default(autoincrement())
+  invitation_text String
+  invited_emails  String[]
+  accepted_emails String[]
+  start_time      DateTime
+  max_players     Int                   @default(8)
+  rounds          Int                   @default(5)
+  room_id         Int? // This will be updated every time a game that has not be concluded creates a different colyseus room
+  status          ScheduledGameStatus   @default(PENDING)
+  created_by      Int
+  reminder        ScheduledGameReminder @default(PENDING)
+  created_at      DateTime              @default(now())
+  updated_at      DateTime?             @updatedAt()
+  deleted_at      DateTime?
 
-  Games Game[]
+  Owner Player @relation(fields: [created_by], references: [id])
 
-  @@map("rooms")
+  @@map("scheduled_games")
+}
+
+enum ScheduledGameStatus {
+  PENDING // The scheduled time has not passed yet
+  ACTIVE // The scheduled time has passed
+  DONE // The game has been played(or not) and is done. This means this game will not trigger colyseus room creations any more
+}
+
+enum ScheduledGameReminder {
+  PENDING
+  SENT
 }

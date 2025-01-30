@@ -28,17 +28,11 @@ export default class GameService {
         Words: {
           connect: randomWordIds,
         },
-        Room: {
-          connect: createGameDto.room_id
-            ? { id: createGameDto.room_id }
-            : undefined,
-        },
       },
       select: {
         id: true,
         type: true,
         created_at: true,
-        room_id: true,
       },
     })
   }

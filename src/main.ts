@@ -15,8 +15,8 @@ import * as basicAuth from 'express-basic-auth'
 import AppModule from './app.module'
 import ValidationException from './utils/exceptions/validation.exception'
 import winstonLoggerInstance from './utils/log/winston.log'
-import SoloRoom from './logic/rooms/solo.room'
-import MultiplayerRoom from './logic/rooms/multiplayer.room'
+import SoloRoom from './logic/scheduled-games/solo.room'
+import MultiplayerRoom from './logic/scheduled-games/multiplayer.room'
 
 function injectDeps<T extends { new (...args: any[]): Room }>(
   app: INestApplication,

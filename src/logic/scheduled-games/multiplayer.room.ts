@@ -12,7 +12,6 @@ import {
   START_COUNTDOWN,
   THIRD_CYCLE_TIME,
 } from '../../commons/constants/game-time.constant'
-import Word from './states/word.state'
 import {
   FIRST_CYCLE_SCORE,
   SECOND_CYCLE_SCORE,
@@ -241,59 +240,59 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
   /**
    * Prepare the necessary steps needed for a multiplayer game to start
    */
-  async startGame() {
-    // Fetch the associated game with the current game
-    const room = await this.prismaService.room.findUnique({
-      where: { room_id: this.roomId },
-    })
-    if (room) {
-      const game = await this.prismaService.game.findFirst({
-        where: { room_id: room.id },
-        orderBy: { created_at: 'desc' },
-        include: { Words: true },
-      })
-
-      // Set the words state variable
-      if (game) {
-        this.state.words = game.Words.map((word) => new Word(word))
-      }
-
-      // Start game preparation countdown
-      this.createCountdown(START_COUNTDOWN)
-      this.state.gameStarted = true
-      await this.setMetadata({
-        ...this.metadata,
-        currentRound: 1,
-      })
-    }
-  }
+  // async startGame() {
+  //   // Fetch the associated game with the current game
+  //   const room = await this.prismaService.room.findUnique({
+  //     where: { room_id: this.roomId },
+  //   })
+  //   if (room) {
+  //     const game = await this.prismaService.game.findFirst({
+  //       where: { room_id: room.id },
+  //       orderBy: { created_at: 'desc' },
+  //       include: { Words: true },
+  //     })
+  //
+  //     // Set the words state variable
+  //     if (game) {
+  //       this.state.words = game.Words.map((word) => new Word(word))
+  //     }
+  //
+  //     // Start game preparation countdown
+  //     this.createCountdown(START_COUNTDOWN)
+  //     this.state.gameStarted = true
+  //     await this.setMetadata({
+  //       ...this.metadata,
+  //       currentRound: 1,
+  //     })
+  //   }
+  // }
 
   /**
    * Prepare and initiate game restart
    */
-  async restartGame() {
-    this.state.guessing = false
-    this.state.round = 0
-    this.state.time = START_COUNTDOWN
-    this.state.cycle = 1
-    this.state.word = undefined
-    this.state.winner = null
-    this.state.gameState = 'START_COUNTDOWN'
-    this.state.waitingCountdownTime = 3
-    this.state.gameStarted = false
-    this.state.words = []
-
-    const room = await this.prismaService.room.findUnique({
-      where: { room_id: this.roomId },
-    })
-
-    if (room) {
-      await this.gameService.create(
-        { type: 'MULTIPLAYER', room_id: room.id },
-        this.state.players[0].id,
-      )
-    }
-  }
+  // async restartGame() {
+  //   this.state.guessing = false
+  //   this.state.round = 0
+  //   this.state.time = START_COUNTDOWN
+  //   this.state.cycle = 1
+  //   this.state.word = undefined
+  //   this.state.winner = null
+  //   this.state.gameState = 'START_COUNTDOWN'
+  //   this.state.waitingCountdownTime = 3
+  //   this.state.gameStarted = false
+  //   this.state.words = []
+  //
+  //   const room = await this.prismaService.room.findUnique({
+  //     where: { room_id: this.roomId },
+  //   })
+  //
+  //   if (room) {
+  //     await this.gameService.create(
+  //       { type: 'MULTIPLAYER', room_id: room.id },
+  //       this.state.players[0].id,
+  //     )
+  //   }
+  // }
 
   /**
    * Handle the guess message
@@ -363,9 +362,9 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
   private registerMessages() {
     this.onMessage('exit', (client) => client.leave())
 
-    this.onMessage('start-game', () => this.startGame())
+    // this.onMessage('start-game', () => this.startGame())
 
-    this.onMessage('restart-game', () => this.restartGame())
+    // this.onMessage('restart-game', () => this.restartGame())
 
     this.onMessage('guess', (client, message: { guess: string }) =>
       this.guess(client, message),

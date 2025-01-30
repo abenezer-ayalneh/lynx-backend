@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common'
 import LogicService from './logic.service'
-import RoomsModule from './rooms/rooms.module'
+import ScheduledGamesModule from './scheduled-games/scheduled-games.module'
 import GameModule from './games/games.module'
 
 @Module({
-  imports: [RoomsModule, GameModule],
+  imports: [ScheduledGamesModule, GameModule],
   providers: [LogicService],
   exports: [LogicService],
 })

@@ -33,7 +33,7 @@ import { MAIL_QUEUE_NAME } from '../commons/constants/common.constant'
           },
         },
         defaults: {
-          from: '"No Reply" <lynx-noreply@gametrix.org>',
+          from: '"No Reply" <lynxman.gamer@gmail.com>',
         },
         template: {
           dir: join(process.env.PWD, 'src', 'mail', 'templates'),
