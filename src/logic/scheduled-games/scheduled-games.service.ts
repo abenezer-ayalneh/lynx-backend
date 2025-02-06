@@ -1,13 +1,17 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
-import { format, parseISO } from 'date-fns'
+import { addMinutes, constructNow, format, parseISO } from 'date-fns'
 import { toZonedTime } from 'date-fns-tz'
+import { matchMaker } from 'colyseus'
 
+import { ScheduledGameReminder, ScheduledGameStatus } from '@prisma/client'
+import { Cron } from '@nestjs/schedule'
 import CreateRoomDto from './dto/create-room.dto'
 import PrismaService from '../../prisma/prisma.service'
 import MailService from '../../mail/mail.service'
 import TIMEZONES from './constants/timezones.constants'
 import RsvpDto from './dto/rsvp.dto'
+import { SCHEDULED_GAME_REMINDER_MINUTES } from '../../commons/constants/email.constant'
 
 @Injectable()
 export default class ScheduledGamesService {
@@ -68,28 +72,9 @@ export default class ScheduledGamesService {
     return null
   }
 
-  // findAll() {
-  //   return this.prismaService.room.findMany({})
-  // }
-  //
   findOne(id: number) {
     return this.prismaService.scheduledGame.findUnique({ where: { id } })
   }
-
-  //
-  // update(id: number, updateRoomDto: UpdateRoomDto) {
-  //   return this.prismaService.room.update({
-  //     where: { id },
-  //     data: updateRoomDto,
-  //   })
-  // }
-  //
-  // remove(id: number) {
-  //   return this.prismaService.room.update({
-  //     where: { id },
-  //     data: { deleted_at: new Date(), status: false },
-  //   })
-  // }
 
   /**
    * Return the date time value based on the timezone provided
@@ -120,5 +105,81 @@ export default class ScheduledGamesService {
     }
 
     throw new NotFoundException('Game not found')
+  }
+
+  @Cron('*/1 * * * *')
+  async invitation() {
+    const now = constructNow(new Date())
+    const scheduledGames = await this.prismaService.scheduledGame.findMany({
+      where: {
+        start_time: {
+          lte: addMinutes(now, SCHEDULED_GAME_REMINDER_MINUTES),
+        },
+        accepted_emails: { isEmpty: false },
+        reminder: ScheduledGameReminder.PENDING,
+      },
+    })
+
+    if (scheduledGames.length > 0) {
+      const gameReminderEmailPromises: Promise<{
+        code: string
+        message: string
+      }>[] = []
+
+      scheduledGames.forEach((game) => {
+        if (game.accepted_emails.length > 0) {
+          matchMaker
+            .createRoom('lobby', {
+              gameId: game.id,
+              startTime: game.start_time.toISOString(),
+            })
+            .then((room) => {
+              gameReminderEmailPromises.push(
+                this.mailService.sendMail({
+                  to: game.accepted_emails,
+                  from: this.configService.get('MAIL_FROM'),
+                  subject: 'Lynx Game Reminder',
+                  template: './game-reminder',
+                  context: {
+                    reminderMinutes: SCHEDULED_GAME_REMINDER_MINUTES,
+                    link: `${this.configService.get<string>('FRONTEND_APP_URL')}/lobby?id=${room.roomId}`,
+                  },
+                }),
+              )
+            })
+        }
+      })
+
+      await this.prismaService.scheduledGame.updateMany({
+        where: {
+          id: {
+            in: scheduledGames.map((game) => game.id),
+          },
+        },
+        data: {
+          reminder: ScheduledGameReminder.SENT,
+        },
+      })
+
+      if (gameReminderEmailPromises.length > 0) {
+        await Promise.all(gameReminderEmailPromises)
+      }
+    }
+  }
+
+  @Cron('*/1 * * * *')
+  async activateGame() {
+    const now = constructNow(new Date())
+    await this.prismaService.scheduledGame.updateMany({
+      where: {
+        start_time: {
+          gte: now,
+        },
+        status: ScheduledGameStatus.PENDING,
+      },
+      data: {
+        status: ScheduledGameStatus.ACTIVE,
+      },
+    })
   }
 }

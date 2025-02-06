@@ -7,7 +7,7 @@ import { BullModule } from '@nestjs/bull'
 import MailController from './mail.controller'
 import MailService from './mail.service'
 import MailConsumer from './queue/mail.consumer'
-import { MAIL_QUEUE_NAME } from '../commons/constants/common.constant'
+import { MAIL_QUEUE_NAME } from '../commons/constants/email.constant'
 
 @Module({
   imports: [

@@ -4,6 +4,7 @@ import { CacheModule } from '@nestjs/cache-manager'
 import { redisStore } from 'cache-manager-redis-yet'
 import type { RedisClientOptions } from 'redis'
 import { APP_FILTER } from '@nestjs/core'
+import { ScheduleModule } from '@nestjs/schedule'
 import LogicModule from './logic/logic.module'
 import WebsocketGateway from './websocket/websocket.gateway'
 import WebsocketModule from './websocket/websocket.module'
@@ -17,6 +18,7 @@ import MailModule from './mail/mail.module'
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    ScheduleModule.forRoot(),
     CacheModule.registerAsync<RedisClientOptions>({
       isGlobal: true,
       imports: [ConfigModule],

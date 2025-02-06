@@ -24,23 +24,9 @@ export default class ScheduledGamesController {
     return this.roomsService.rsvp(rsvpDto)
   }
 
-  // @Get()
-  // findAll() {
-  //   return this.roomsService.findAll()
-  // }
-  //
-  // @Get(':id')
-  // findOne(@Param('id') id: string) {
-  //   return this.roomsService.findOne(+id)
-  // }
-  //
-  // @Patch(':id')
-  // update(@Param('id') id: string, @Body() updateRoomDto: UpdateRoomDto) {
-  //   return this.roomsService.update(+id, updateRoomDto)
-  // }
-  //
-  // @Delete(':id')
-  // remove(@Param('id') id: string) {
-  //   return this.roomsService.remove(+id)
-  // }
+  @Auth(AuthType.None)
+  @Get('invite')
+  sendInvitation() {
+    return this.roomsService.invitation()
+  }
 }

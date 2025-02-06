@@ -2,7 +2,7 @@ import { ISendMailOptions, MailerService } from '@nestjs-modules/mailer'
 import { Process, Processor } from '@nestjs/bull'
 import { Job } from 'bull'
 import { Logger } from '@nestjs/common'
-import { MAIL_QUEUE_NAME } from '../../commons/constants/common.constant'
+import { MAIL_QUEUE_NAME } from '../../commons/constants/email.constant'
 
 @Processor(MAIL_QUEUE_NAME)
 export default class MailConsumer {

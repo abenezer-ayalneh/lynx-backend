@@ -17,6 +17,7 @@ import ValidationException from './utils/exceptions/validation.exception'
 import winstonLoggerInstance from './utils/log/winston.log'
 import SoloRoom from './logic/scheduled-games/solo.room'
 import MultiplayerRoom from './logic/scheduled-games/multiplayer.room'
+import LobbyRoom from './logic/scheduled-games/lobby.room'
 
 function injectDeps<T extends { new (...args: any[]): Room }>(
   app: INestApplication,
@@ -103,6 +104,7 @@ async function bootstrap() {
   })
 
   colyseusServer.define('solo', injectDeps(app, SoloRoom), { gameType: 'SOLO' })
+  colyseusServer.define('lobby', injectDeps(app, LobbyRoom))
   colyseusServer.define('multiplayer', injectDeps(app, MultiplayerRoom))
 
   // Starts listening for shutdown hooks
