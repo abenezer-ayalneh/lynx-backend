@@ -1,4 +1,6 @@
 import { PartialType } from '@nestjs/mapped-types'
-import CreateRoomDto from './create-room.dto'
+import CreateMultiplayerRoomDto from './create-multiplayer-room.dto'
 
-export default class UpdateRoomDto extends PartialType(CreateRoomDto) {}
+export default class UpdateRoomDto extends PartialType(
+  CreateMultiplayerRoomDto,
+) {}

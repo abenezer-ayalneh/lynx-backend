@@ -1,40 +1,52 @@
-import { Injectable, NotFoundException } from '@nestjs/common'
+import { Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { addMinutes, constructNow, format, parseISO } from 'date-fns'
-import { toZonedTime } from 'date-fns-tz'
 import { matchMaker } from 'colyseus'
 
 import { ScheduledGameReminder, ScheduledGameStatus } from '@prisma/client'
 import { Cron } from '@nestjs/schedule'
-import CreateRoomDto from './dto/create-room.dto'
+import { tz } from '@date-fns/tz/tz'
+import CreateMultiplayerRoomDto from './dto/create-multiplayer-room.dto'
 import PrismaService from '../../prisma/prisma.service'
 import MailService from '../../mail/mail.service'
-import TIMEZONES from './constants/timezones.constants'
 import RsvpDto from './dto/rsvp.dto'
 import { SCHEDULED_GAME_REMINDER_MINUTES } from '../../commons/constants/email.constant'
+import { ActivePlayerData } from '../../iam/types/active-player-data.type'
+import TIMEZONES from './constants/timezones.constants'
 
 @Injectable()
 export default class ScheduledGamesService {
+  logger: Logger
+
   constructor(
     private readonly prismaService: PrismaService,
     private readonly configService: ConfigService,
     private readonly mailService: MailService,
-  ) {}
+  ) {
+    this.logger = new Logger('ScheduledGamesService')
+  }
 
-  async create(playerId: number, createRoomDto: CreateRoomDto) {
-    // Create the scheduled game
-    const startTime = this.getIsoTimeFromTimezoneBasedTime(
-      createRoomDto.start_time,
-      createRoomDto.timezone,
-    )
+  async create(
+    activePlayerData: ActivePlayerData,
+    createRoomDto: CreateMultiplayerRoomDto,
+  ) {
+    const emailsToSendInvitationTo = [
+      ...createRoomDto.emails,
+      activePlayerData.email,
+    ]
+
+    const startTimeIso = parseISO(createRoomDto.start_time, {
+      in: tz(createRoomDto.timezone),
+    })
+
     const scheduledGame = await this.prismaService.scheduledGame.create({
       data: {
         invitation_text: createRoomDto.invitation_text,
-        invited_emails: createRoomDto.emails,
-        start_time: startTime,
+        invited_emails: emailsToSendInvitationTo,
+        start_time: startTimeIso.toISOString(),
         Owner: {
           connect: {
-            id: playerId,
+            id: activePlayerData.sub,
           },
         },
       },
@@ -44,8 +56,8 @@ export default class ScheduledGamesService {
     const emailSchedulePromises: Promise<{ code: string; message: string }>[] =
       []
 
-    for (let i = 0; i < createRoomDto.emails.length; i += 1) {
-      const email = createRoomDto.emails[i]
+    for (let i = 0; i < emailsToSendInvitationTo.length; i += 1) {
+      const email = emailsToSendInvitationTo[i]
       const iAmInLink = `${this.configService.get<string>('FRONTEND_APP_URL')}/rsvp?gameId=${scheduledGame.id}&email=${email}`
 
       emailSchedulePromises.push(
@@ -56,8 +68,8 @@ export default class ScheduledGamesService {
           template: './game-invitation',
           context: {
             invitationText: createRoomDto.invitation_text,
-            date: format(startTime, 'yyyy-MM-dd'),
-            time: format(startTime, 'hh:mm a'),
+            date: format(startTimeIso, 'yyyy-MM-dd'),
+            time: format(startTimeIso, 'hh:mm aa'),
             timezone: TIMEZONES[createRoomDto.timezone].name,
             url: iAmInLink,
           },
@@ -74,15 +86,6 @@ export default class ScheduledGamesService {
 
   findOne(id: number) {
     return this.prismaService.scheduledGame.findUnique({ where: { id } })
-  }
-
-  /**
-   * Return the date time value based on the timezone provided
-   * @param dateTime
-   * @param timezone
-   */
-  getIsoTimeFromTimezoneBasedTime(dateTime: string, timezone: string) {
-    return toZonedTime(parseISO(dateTime), timezone).toISOString()
   }
 
   async rsvp(rsvpDto: RsvpDto) {

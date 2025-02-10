@@ -1,6 +1,6 @@
 import { IsArray, IsEmail, IsNotEmpty, IsString } from 'class-validator'
 
-export default class CreateRoomDto {
+export default class CreateMultiplayerRoomDto {
   @IsString()
   @IsNotEmpty()
   invitation_text: string
