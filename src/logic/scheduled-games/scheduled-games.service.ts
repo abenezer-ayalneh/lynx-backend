@@ -91,7 +91,7 @@ export default class ScheduledGamesService {
   async rsvp(rsvpDto: RsvpDto) {
     const game = await this.findOne(Number(rsvpDto.gameId))
 
-    if (game) {
+    if (game && game.invited_emails.includes(rsvpDto.email)) {
       if (game.accepted_emails.includes(rsvpDto.email)) {
         return game
       }
@@ -113,6 +113,7 @@ export default class ScheduledGamesService {
   @Cron('*/1 * * * *')
   async invitation() {
     const now = constructNow(new Date())
+    // Get games that are within 10 minutes reach and has not sent invitation to the participants
     const scheduledGames = await this.prismaService.scheduledGame.findMany({
       where: {
         start_time: {
@@ -153,6 +154,7 @@ export default class ScheduledGamesService {
         }
       })
 
+      // Update the game by setting the reminder value as SENT
       await this.prismaService.scheduledGame.updateMany({
         where: {
           id: {
