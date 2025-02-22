@@ -1,11 +1,11 @@
-import { matchMaker, Room } from 'colyseus'
+import { Client, matchMaker, Room } from 'colyseus'
 import { Injectable, Logger } from '@nestjs/common'
 import { LobbyRoomProps } from './types/lobby-room-props.type'
 import LobbyRoomState from './states/lobby-room.state'
 import GameService from '../games/games.service'
 
 @Injectable()
-export default class LobbyRoom extends Room {
+export default class LobbyRoom extends Room<LobbyRoomState> {
   logger: Logger
 
   constructor(private readonly gameService: GameService) {
@@ -23,18 +23,20 @@ export default class LobbyRoom extends Room {
     this.registerMessages()
   }
 
-  // /**
-  //  * Triggered when a player successfully joins the room
-  //  */
-  // onJoin(client: Client, options: any, auth: { sub: number }) {
-  //   this.logger.debug({ client })
-  // }
+  /**
+   * Triggered when a player successfully joins the room
+   */
+  onJoin(client: Client, options: { player: { name: string } }) {
+    this.state.playerNames.set(client.sessionId, options.player.name)
+  }
 
-  // /**
-  //  *  Triggered when a player leaves the room
-  //  * @param client
-  //  */
-  // onLeave(client: Client) {}
+  /**
+   *  Triggered when a player leaves the room
+   * @param client
+   */
+  onLeave(client: Client) {
+    this.state.playerNames.delete(client.sessionId)
+  }
 
   /**
    * Subscribe to necessary messages

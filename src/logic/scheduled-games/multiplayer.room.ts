@@ -282,6 +282,9 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
         scheduledGame.created_by,
       )
     }
+
+    // Start the game
+    await this.startGame()
   }
 
   /**
