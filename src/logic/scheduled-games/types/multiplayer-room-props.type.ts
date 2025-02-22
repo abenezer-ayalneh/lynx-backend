@@ -14,8 +14,9 @@ export type MultiplayerRoomProps = {
   winner?: string // The player ID of the winner player for the game
   score?: MapSchema<number> // Scores of the players (key is ID and value is score)
   gameStarted?: boolean // Indicator for game start state
+  gameId: number // The scheduled game's ID
 }
 
 export type MultiplayerRoomCreateProps = {
-  name: string
+  gameId: number
 }

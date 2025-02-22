@@ -6,10 +6,13 @@ export default class LobbyRoomState extends Schema {
 
   @type('string') startTime: string
 
-  constructor({ gameId, startTime }: LobbyRoomProps) {
+  @type('number') ownerId: number
+
+  constructor({ gameId, startTime, ownerId }: LobbyRoomProps) {
     super()
 
     this.gameId = gameId
     this.startTime = startTime
+    this.ownerId = ownerId
   }
 }

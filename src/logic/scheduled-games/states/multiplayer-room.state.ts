@@ -4,6 +4,8 @@ import Word from './word.state'
 import { MultiplayerRoomProps } from '../types/multiplayer-room-props.type'
 
 export default class MultiplayerRoomState extends Schema {
+  @type('number') gameId: number // The scheduled game's ID
+
   @type([Player]) players = new ArraySchema<Player>() // Players currently available in the game room
 
   @type('boolean') guessing: boolean // The guessing state of the game (i.e. if a player has clicked on the 'guess' button or not)
@@ -46,6 +48,7 @@ export default class MultiplayerRoomState extends Schema {
     winner,
     score,
     gameStarted,
+    gameId,
   }: MultiplayerRoomProps) {
     super()
 
@@ -61,5 +64,6 @@ export default class MultiplayerRoomState extends Schema {
     this.winner = winner
     this.score = score
     this.gameStarted = gameStarted
+    this.gameId = gameId
   }
 }

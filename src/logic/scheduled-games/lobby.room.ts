@@ -1,13 +1,14 @@
-import { Room } from 'colyseus'
+import { matchMaker, Room } from 'colyseus'
 import { Injectable, Logger } from '@nestjs/common'
-import { CreateLobbyDto } from './types/lobby-room-props.type'
+import { LobbyRoomProps } from './types/lobby-room-props.type'
 import LobbyRoomState from './states/lobby-room.state'
+import GameService from '../games/games.service'
 
 @Injectable()
 export default class LobbyRoom extends Room {
   logger: Logger
 
-  constructor() {
+  constructor(private readonly gameService: GameService) {
     super()
     this.logger = new Logger('LobbyRoom')
     this.autoDispose = false
@@ -16,22 +17,46 @@ export default class LobbyRoom extends Room {
   /**
    * Initiate a room and subscribe to the guess message type
    */
-  onCreate(createLobbyDto: CreateLobbyDto) {
+  onCreate(createLobbyDto: LobbyRoomProps) {
     const lobbyState = new LobbyRoomState(createLobbyDto)
-
     this.setState(lobbyState)
+    this.registerMessages()
   }
 
-  /**
-   * Triggered when a player successfully joins the room
-   */
+  // /**
+  //  * Triggered when a player successfully joins the room
+  //  */
   // onJoin(client: Client, options: any, auth: { sub: number }) {
   //   this.logger.debug({ client })
   // }
 
-  /**
-   *  Triggered when a player leaves the room
-   * @param client
-   */
+  // /**
+  //  *  Triggered when a player leaves the room
+  //  * @param client
+  //  */
   // onLeave(client: Client) {}
+
+  /**
+   * Subscribe to necessary messages
+   * @private
+   */
+  private registerMessages() {
+    this.onMessage('startGame', (_, message) => {
+      this.gameService
+        .create(
+          { type: 'MULTIPLAYER', scheduledGameId: this.state.gameId },
+          Number(message.playerId),
+        )
+        .then(() => {
+          matchMaker
+            .createRoom('multiplayer', { gameId: this.state.gameId })
+            .then(async (room) => {
+              this.broadcast('startGame', {
+                roomId: room.roomId,
+              })
+              await this.disconnect()
+            })
+        })
+    })
+  }
 }

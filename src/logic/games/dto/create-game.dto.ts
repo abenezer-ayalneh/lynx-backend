@@ -8,5 +8,5 @@ export default class CreateGameDto {
 
   @IsNumber()
   @IsOptional()
-  room_id?: number
+  scheduledGameId?: number
 }

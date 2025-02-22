@@ -37,15 +37,17 @@ model Word {
 }
 
 model Game {
-  id         Int       @id @default(autoincrement())
-  type       GameType
-  status     Boolean   @default(true)
-  owner_id   Int
-  created_at DateTime  @default(now())
-  updated_at DateTime? @updatedAt()
-  deleted_at DateTime?
+  id                Int       @id @default(autoincrement())
+  type              GameType
+  status            Boolean   @default(true)
+  owner_id          Int
+  scheduled_game_id Int?
+  created_at        DateTime  @default(now())
+  updated_at        DateTime? @updatedAt()
+  deleted_at        DateTime?
 
   Owner Player @relation(fields: [owner_id], references: [id])
+  ScheduledGame ScheduledGame? @relation(fields: [scheduled_game_id], references: [id])
   Words Word[]
 
   @@map("games")
@@ -76,7 +78,6 @@ model ScheduledGame {
   start_time      DateTime
   max_players     Int                   @default(8)
   rounds          Int                   @default(5)
-  room_id         Int? // This will be updated every time a game that has not be concluded creates a different colyseus room
   status          ScheduledGameStatus   @default(PENDING)
   created_by      Int
   reminder        ScheduledGameReminder @default(PENDING)
@@ -85,6 +86,7 @@ model ScheduledGame {
   deleted_at      DateTime?
 
   Owner Player @relation(fields: [created_by], references: [id])
+  Games Game[]
 
   @@map("scheduled_games")
 }

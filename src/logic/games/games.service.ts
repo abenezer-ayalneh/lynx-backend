@@ -28,6 +28,11 @@ export default class GameService {
         Words: {
           connect: randomWordIds,
         },
+        ScheduledGame: {
+          connect: createGameDto.scheduledGameId
+            ? { id: createGameDto.scheduledGameId }
+            : undefined,
+        },
       },
       select: {
         id: true,
