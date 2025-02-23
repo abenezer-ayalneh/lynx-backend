@@ -24,10 +24,4 @@ export default class ScheduledGamesController {
   rsvp(@Query() rsvpDto: RsvpDto) {
     return this.roomsService.rsvp(rsvpDto)
   }
-
-  @Auth(AuthType.None)
-  @Get('invite')
-  sendInvitation() {
-    return this.roomsService.invitation()
-  }
 }
