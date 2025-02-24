@@ -147,20 +147,23 @@ export default class ScheduledGamesService {
             .createRoom('lobby', {
               gameId: game.id,
               startTime: game.start_time.toISOString(),
+              ownerId: game.created_by,
             })
             .then((room) => {
-              gameReminderEmailPromises.push(
-                this.mailService.sendMail({
-                  to: game.accepted_emails,
-                  from: this.configService.get('MAIL_FROM'),
-                  subject: 'Lynx Game Reminder',
-                  template: './game-reminder',
-                  context: {
-                    reminderMinutes: SCHEDULED_GAME_REMINDER_MINUTES,
-                    link: `${this.configService.get<string>('FRONTEND_APP_URL')}/scheduled-game/lobby?id=${room.roomId}`,
-                  },
-                }),
-              )
+              game.accepted_emails.forEach((email) => {
+                gameReminderEmailPromises.push(
+                  this.mailService.sendMail({
+                    to: [email],
+                    from: this.configService.get('MAIL_FROM'),
+                    subject: 'Lynx Game Reminder',
+                    template: './game-reminder',
+                    context: {
+                      reminderMinutes: SCHEDULED_GAME_REMINDER_MINUTES,
+                      link: `${this.configService.get<string>('FRONTEND_APP_URL')}/scheduled-game/lobby?id=${room.roomId}`,
+                    },
+                  }),
+                )
+              })
             })
         }
       })
