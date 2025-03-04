@@ -1,3 +1,2 @@
-const GUESS = 'guess'
-
-export default GUESS
+export const GUESS = 'guess'
+export const WRONG_GUESS = 'wrong-guess'

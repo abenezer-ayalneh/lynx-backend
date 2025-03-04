@@ -6,6 +6,8 @@ import { MultiplayerRoomProps } from '../types/multiplayer-room-props.type'
 export default class MultiplayerRoomState extends Schema {
   @type('number') gameId: number // The scheduled game's ID
 
+  @type('number') ownerId: number // The ID of the player who created this game
+
   @type([Player]) players = new ArraySchema<Player>() // Players currently available in the game room
 
   @type('boolean') guessing: boolean // The guessing state of the game (i.e. if a player has clicked on the 'guess' button or not)
@@ -49,6 +51,7 @@ export default class MultiplayerRoomState extends Schema {
     score,
     gameStarted,
     gameId,
+    ownerId,
   }: MultiplayerRoomProps) {
     super()
 
@@ -65,5 +68,6 @@ export default class MultiplayerRoomState extends Schema {
     this.score = score
     this.gameStarted = gameStarted
     this.gameId = gameId
+    this.ownerId = ownerId
   }
 }

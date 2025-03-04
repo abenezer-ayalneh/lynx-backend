@@ -12,7 +12,7 @@ import {
 import PrismaService from '../../prisma/prisma.service'
 import Word from './states/word.state'
 import { RoomCreateProps } from './types/solo-room-props.type'
-import GUESS from './constants/message.constant'
+import { GUESS, WRONG_GUESS } from './constants/message.constant'
 import {
   FIRST_CYCLE_SCORE,
   SECOND_CYCLE_SCORE,
@@ -74,6 +74,8 @@ export default class SoloRoom extends Room<RoomState> {
       const winner = await this.checkForWinner(message.guess)
       if (winner) {
         await this.handleGameWon()
+      } else {
+        client.send(WRONG_GUESS, { guess: false })
       }
     })
   }

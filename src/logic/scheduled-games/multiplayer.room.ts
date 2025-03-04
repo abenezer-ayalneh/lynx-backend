@@ -23,6 +23,7 @@ import {
 import { MultiplayerRoomCreateProps } from './types/multiplayer-room-props.type'
 import Word from './states/word.state'
 import GameService from '../games/games.service'
+import { GUESS, WRONG_GUESS } from './constants/message.constant'
 
 @Injectable()
 export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
@@ -77,6 +78,7 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
       score: new MapSchema<number>(),
       gameStarted: false,
       gameId: data.gameId,
+      ownerId: data.ownerId,
     })
     this.setState(roomState)
 
@@ -300,6 +302,8 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
       this.state.winner = client.sessionId
       this.addScoreToWinner(client.sessionId)
       await this.stopCurrentRoundOrGame()
+    } else {
+      client.send(WRONG_GUESS, { guess: false })
     }
   }
 
@@ -359,7 +363,7 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
 
     this.onMessage('start-new-game', () => this.restartGame())
 
-    this.onMessage('guess', (client, message: { guess: string }) =>
+    this.onMessage(GUESS, (client, message: { guess: string }) =>
       this.guess(client, message),
     )
 

@@ -51,7 +51,10 @@ export default class LobbyRoom extends Room<LobbyRoomState> {
         )
         .then(() => {
           matchMaker
-            .createRoom('multiplayer', { gameId: this.state.gameId })
+            .createRoom('multiplayer', {
+              gameId: this.state.gameId,
+              ownerId: this.state.ownerId,
+            })
             .then(async (room) => {
               this.broadcast('startGame', {
                 roomId: room.roomId,
