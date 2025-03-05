@@ -12,7 +12,7 @@ export default class ScheduledGamesController {
   constructor(private readonly roomsService: ScheduledGamesService) {}
 
   @Post()
-  create(
+  async create(
     @ActiveUser() activePlayerData: ActivePlayerData,
     @Body() createRoomDto: CreateMultiplayerRoomDto,
   ) {

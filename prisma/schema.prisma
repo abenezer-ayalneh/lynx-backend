@@ -46,9 +46,9 @@ model Game {
   updated_at        DateTime? @updatedAt()
   deleted_at        DateTime?
 
-  Owner Player @relation(fields: [owner_id], references: [id])
+  Owner         Player         @relation(fields: [owner_id], references: [id])
   ScheduledGame ScheduledGame? @relation(fields: [scheduled_game_id], references: [id])
-  Words Word[]
+  Words         Word[]
 
   @@map("games")
 }
@@ -75,6 +75,7 @@ model ScheduledGame {
   invitation_text String
   invited_emails  String[]
   accepted_emails String[]
+  type            ScheduledGameType
   start_time      DateTime
   max_players     Int                   @default(8)
   rounds          Int                   @default(5)
@@ -100,4 +101,9 @@ enum ScheduledGameStatus {
 enum ScheduledGameReminder {
   PENDING
   SENT
+}
+
+enum ScheduledGameType {
+  INSTANT
+  FUTURE
 }

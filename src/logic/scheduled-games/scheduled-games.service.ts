@@ -3,9 +3,14 @@ import { ConfigService } from '@nestjs/config'
 import { addMinutes, constructNow, format, parseISO } from 'date-fns'
 import { matchMaker } from 'colyseus'
 
-import { ScheduledGameReminder, ScheduledGameStatus } from '@prisma/client'
-import { tz } from '@date-fns/tz/tz'
+import {
+  ScheduledGame,
+  ScheduledGameReminder,
+  ScheduledGameStatus,
+  ScheduledGameType,
+} from '@prisma/client'
 import { Cron } from '@nestjs/schedule'
+import { tz } from '@date-fns/tz/tz'
 import CreateMultiplayerRoomDto from './dto/create-multiplayer-room.dto'
 import PrismaService from '../../prisma/prisma.service'
 import MailService from '../../mail/mail.service'
@@ -30,70 +35,12 @@ export default class ScheduledGamesService {
     activePlayerData: ActivePlayerData,
     createRoomDto: CreateMultiplayerRoomDto,
   ) {
-    const emailsToSendInvitationTo = [
-      ...createRoomDto.emails,
-      activePlayerData.email,
-    ]
-
-    const startTimeIso = parseISO(createRoomDto.start_time, {
-      in: tz(createRoomDto.timezone),
-    })
-
-    const scheduledGame = await this.prismaService.scheduledGame.create({
-      data: {
-        invitation_text: createRoomDto.invitation_text,
-        invited_emails: emailsToSendInvitationTo,
-        start_time: startTimeIso.toISOString(),
-        Owner: {
-          connect: {
-            id: activePlayerData.sub,
-          },
-        },
-      },
-    })
-
-    // Send invitation email
-    const emailSchedulePromises: Promise<{ code: string; message: string }>[] =
-      []
-
-    for (let i = 0; i < emailsToSendInvitationTo.length; i += 1) {
-      const email = emailsToSendInvitationTo[i]
-      const iAmInLink = `${this.configService.get<string>('FRONTEND_APP_URL')}/scheduled-game/rsvp?gameId=${scheduledGame.id}&email=${email}`
-
-      emailSchedulePromises.push(
-        this.mailService.sendMail({
-          to: [email],
-          from: this.configService.get('MAIL_FROM'),
-          subject: 'Lynx Game Invitation',
-          template: './game-invitation',
-          context: {
-            invitationText: createRoomDto.invitation_text,
-            date: format(startTimeIso, 'yyyy-MM-dd'),
-            time: format(startTimeIso, 'hh:mm aa'),
-            timezone: TIMEZONES[createRoomDto.timezone].name,
-            url: iAmInLink,
-          },
-        }),
-      )
+    if (createRoomDto.gameScheduleType === ScheduledGameType.FUTURE) {
+      return this.handleFutureScheduledGame(activePlayerData, createRoomDto)
     }
 
-    if (emailSchedulePromises.length > 0) {
-      return Promise.all(emailSchedulePromises)
-    }
-
-    return null
-    // return { link: await this.instantInvitation(scheduledGame) }
+    return this.handleInstantScheduledGame(activePlayerData, createRoomDto)
   }
-
-  // async instantInvitation(game: ScheduledGame) {
-  //   const room = await matchMaker.createRoom('lobby', {
-  //     gameId: game.id,
-  //     startTime: game.start_time.toISOString(),
-  //     ownerId: game.created_by,
-  //   })
-  //
-  //   return `${this.configService.get<string>('FRONTEND_APP_URL')}/scheduled-game/lobby?id=${room.roomId}`
-  // }
 
   findOne(id: number) {
     return this.prismaService.scheduledGame.findUnique({ where: { id } })
@@ -122,7 +69,7 @@ export default class ScheduledGamesService {
   }
 
   @Cron('*/1 * * * *')
-  async invitation() {
+  private async invitationJob() {
     const now = constructNow(new Date())
     // Get games that are within 10 minutes reach and has not sent invitation to the participants
     const scheduledGames = await this.prismaService.scheduledGame.findMany({
@@ -130,43 +77,14 @@ export default class ScheduledGamesService {
         start_time: {
           lte: addMinutes(now, SCHEDULED_GAME_REMINDER_MINUTES),
         },
+        type: ScheduledGameType.FUTURE,
         accepted_emails: { isEmpty: false },
         reminder: ScheduledGameReminder.PENDING,
       },
     })
 
     if (scheduledGames.length > 0) {
-      const gameReminderEmailPromises: Promise<{
-        code: string
-        message: string
-      }>[] = []
-
-      scheduledGames.forEach((game) => {
-        if (game.accepted_emails.length > 0) {
-          matchMaker
-            .createRoom('lobby', {
-              gameId: game.id,
-              startTime: game.start_time.toISOString(),
-              ownerId: game.created_by,
-            })
-            .then((room) => {
-              game.accepted_emails.forEach((email) => {
-                gameReminderEmailPromises.push(
-                  this.mailService.sendMail({
-                    to: [email],
-                    from: this.configService.get('MAIL_FROM'),
-                    subject: 'Lynx Game Reminder',
-                    template: './game-reminder',
-                    context: {
-                      reminderMinutes: SCHEDULED_GAME_REMINDER_MINUTES,
-                      link: `${this.configService.get<string>('FRONTEND_APP_URL')}/scheduled-game/lobby?id=${room.roomId}`,
-                    },
-                  }),
-                )
-              })
-            })
-        }
-      })
+      scheduledGames.forEach((game) => this.inviteToLobby(game))
 
       // Update the game by setting the reminder value as SENT
       await this.prismaService.scheduledGame.updateMany({
@@ -179,15 +97,11 @@ export default class ScheduledGamesService {
           reminder: ScheduledGameReminder.SENT,
         },
       })
-
-      if (gameReminderEmailPromises.length > 0) {
-        await Promise.all(gameReminderEmailPromises)
-      }
     }
   }
 
   @Cron('*/1 * * * *')
-  async activateGame() {
+  private async activateGame() {
     const now = constructNow(new Date())
     await this.prismaService.scheduledGame.updateMany({
       where: {
@@ -200,5 +114,133 @@ export default class ScheduledGamesService {
         status: ScheduledGameStatus.ACTIVE,
       },
     })
+  }
+
+  private async handleFutureScheduledGame(
+    activePlayerData: ActivePlayerData,
+    createRoomDto: CreateMultiplayerRoomDto,
+  ) {
+    const emailsToSendInvitationTo = [
+      ...createRoomDto.emails,
+      activePlayerData.email,
+    ]
+
+    const startTimeIso = parseISO(createRoomDto.start_time, {
+      in: tz(createRoomDto.timezone),
+    })
+
+    const scheduledGame = await this.prismaService.scheduledGame.create({
+      data: {
+        invitation_text: createRoomDto.invitation_text,
+        invited_emails: emailsToSendInvitationTo,
+        start_time: startTimeIso.toISOString(),
+        type: ScheduledGameType.FUTURE,
+        Owner: {
+          connect: {
+            id: activePlayerData.sub,
+          },
+        },
+      },
+    })
+
+    // Send invitation email
+    const emailSchedulePromises: Promise<{
+      code: string
+      message: string
+    }>[] = []
+
+    for (let i = 0; i < emailsToSendInvitationTo.length; i += 1) {
+      const email = emailsToSendInvitationTo[i]
+      const iAmInLink = `${this.configService.get<string>('FRONTEND_APP_URL')}/scheduled-game/rsvp?gameId=${scheduledGame.id}&email=${email}`
+
+      emailSchedulePromises.push(
+        this.mailService.sendMail({
+          to: [email],
+          from: this.configService.get('MAIL_FROM'),
+          subject: 'Lynx Game Invitation',
+          template: './game-invitation',
+          context: {
+            invitationText: createRoomDto.invitation_text,
+            date: format(startTimeIso, 'yyyy-MM-dd'),
+            time: format(startTimeIso, 'hh:mm aa'),
+            timezone: TIMEZONES[createRoomDto.timezone].name,
+            url: iAmInLink,
+          },
+        }),
+      )
+    }
+
+    if (emailSchedulePromises.length > 0) {
+      await Promise.all(emailSchedulePromises)
+    }
+
+    return ''
+  }
+
+  private async handleInstantScheduledGame(
+    activePlayerData: ActivePlayerData,
+    createRoomDto: CreateMultiplayerRoomDto,
+  ) {
+    const emailsToSendInvitationTo = [
+      ...createRoomDto.emails,
+      // activePlayerData.email,
+    ]
+
+    // Instant game invitation
+    const startTimeIso = constructNow(new Date())
+    const scheduledGame = await this.prismaService.scheduledGame.create({
+      data: {
+        invitation_text: createRoomDto.invitation_text,
+        invited_emails: emailsToSendInvitationTo,
+        accepted_emails: emailsToSendInvitationTo,
+        start_time: startTimeIso.toISOString(),
+        type: ScheduledGameType.INSTANT,
+        Owner: {
+          connect: {
+            id: activePlayerData.sub,
+          },
+        },
+      },
+    })
+
+    return this.inviteToLobby(scheduledGame)
+  }
+
+  private async inviteToLobby(game: ScheduledGame) {
+    const returnValue = { lobbyId: null }
+    const gameReminderEmailPromises: Promise<{
+      code: string
+      message: string
+    }>[] = []
+
+    if (game.accepted_emails.length > 0) {
+      const room = await matchMaker.createRoom('lobby', {
+        gameId: game.id,
+        startTime: game.start_time.toISOString(),
+        ownerId: game.created_by,
+      })
+
+      returnValue.lobbyId = room.roomId
+      game.accepted_emails.forEach((email) => {
+        gameReminderEmailPromises.push(
+          this.mailService.sendMail({
+            to: [email],
+            from: this.configService.get('MAIL_FROM'),
+            subject: 'Lynx Game Reminder',
+            template: './game-reminder',
+            context: {
+              reminderMinutes: SCHEDULED_GAME_REMINDER_MINUTES,
+              link: `${this.configService.get<string>('FRONTEND_APP_URL')}/scheduled-game/lobby?id=${room.roomId}`,
+            },
+          }),
+        )
+      })
+    }
+
+    if (gameReminderEmailPromises.length > 0) {
+      Promise.all(gameReminderEmailPromises)
+    }
+
+    return returnValue
   }
 }
