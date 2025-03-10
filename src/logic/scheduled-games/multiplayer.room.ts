@@ -340,9 +340,7 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
    */
   private async checkForWinner(guess: string) {
     // Get the currently being played word
-    const wordBeingGuessed = await this.prismaService.word.findUnique({
-      where: { id: this.state.word.id },
-    })
+    const wordBeingGuessed = this.state.word
 
     if (this.state.winner === null && wordBeingGuessed) {
       // Cast to lowercase for case-insensitive comparison
