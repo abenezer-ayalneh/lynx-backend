@@ -5,3 +5,11 @@ export const THIRD_CYCLE_TIME = 5
 export const START_COUNTDOWN = 3
 export const MID_GAME_COUNTDOWN = 5
 export const TOTAL_GAME_ROUNDS = 5
+
+// Testing values
+// export const FIRST_CYCLE_TIME = 1
+// export const SECOND_CYCLE_TIME = 1
+// export const THIRD_CYCLE_TIME = 1
+// export const START_COUNTDOWN = 1
+// export const MID_GAME_COUNTDOWN = 1
+// export const TOTAL_GAME_ROUNDS = 1

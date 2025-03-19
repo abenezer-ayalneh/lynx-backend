@@ -18,6 +18,7 @@ import {
   SECOND_CYCLE_SCORE,
   THIRD_CYCLE_SCORE,
 } from './constants/score.constant'
+import Winner from './states/winner.state'
 
 @Injectable()
 export default class SoloRoom extends Room<RoomState> {
@@ -73,7 +74,7 @@ export default class SoloRoom extends Room<RoomState> {
     this.onMessage(GUESS, async (client, message: { guess: string }) => {
       const winner = await this.checkForWinner(message.guess)
       if (winner) {
-        await this.handleGameWon()
+        await this.handleGameWon(client.sessionId)
       } else {
         client.send(WRONG_GUESS, { guess: false })
       }
@@ -83,8 +84,7 @@ export default class SoloRoom extends Room<RoomState> {
   /**
    * Handle all the necessary steps when a player wins a round
    */
-  async handleGameWon() {
-    this.state.winner = true
+  async handleGameWon(sessionId: string) {
     let playerScore: number
     switch (this.state.cycle) {
       case 1:
@@ -102,6 +102,11 @@ export default class SoloRoom extends Room<RoomState> {
 
     this.state.totalScore += playerScore
     this.state.score = playerScore
+    this.state.winner = new Winner({
+      id: sessionId,
+      name: 'Player Name',
+      score: playerScore,
+    })
     await this.stopCurrentRoundOrGame()
   }
 
@@ -125,7 +130,7 @@ export default class SoloRoom extends Room<RoomState> {
       waitingCountdownTime: START_COUNTDOWN,
       words,
       gameState: 'START_COUNTDOWN',
-      winner: false,
+      winner: null,
       score: 0,
       totalScore: 0,
     })
@@ -159,7 +164,7 @@ export default class SoloRoom extends Room<RoomState> {
   firstCycle() {
     this.state.time = FIRST_CYCLE_TIME // Set time to the first time constant
     this.state.cycle = 1 // Set the cycle number
-    this.state.winner = false // Reset the winner state
+    this.state.winner = null // Reset the winner state
     this.state.round += 1 // Goto the next round
     this.state.word = this.state.words[this.state.round - 1] // Choose the word to be played from the words list
     this.state.score = 0

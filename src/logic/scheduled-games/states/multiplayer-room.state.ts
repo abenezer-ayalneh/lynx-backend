@@ -2,6 +2,8 @@ import { ArraySchema, MapSchema, Schema, type } from '@colyseus/schema'
 import Player from './player.state'
 import Word from './word.state'
 import { MultiplayerRoomProps } from '../types/multiplayer-room-props.type'
+import Winner from './winner.state'
+import { Winner as WinnerType } from '../types/winner.type'
 
 export default class MultiplayerRoomState extends Schema {
   @type('number') gameId: number // The scheduled game's ID
@@ -27,11 +29,11 @@ export default class MultiplayerRoomState extends Schema {
   @type('string')
   gameState: 'START_COUNTDOWN' | 'ROUND_END' | 'GAME_STARTED' | 'GAME_END' // The state the game is currently in
 
-  @type('string') winner: string | null // The player ID of the winner player for the game
+  @type(Winner) winner: Winner | null // The winner
 
   @type({ map: 'number' }) score = new MapSchema<number>() // Scores of the players (key is ID and value is score)
 
-  @type({ map: 'number' }) totalScore = new MapSchema<number>() // Total scores of the players (key is ID and value is total score)
+  @type({ map: Winner }) totalScore = new MapSchema<Winner>() // Total scores of the players (key is ID and value is total score)
 
   @type('boolean') gameStarted: boolean // Indicator for game start state
 
@@ -64,10 +66,14 @@ export default class MultiplayerRoomState extends Schema {
     this.waitingCountdownTime = waitingCountdownTime
     this.words = words
     this.gameState = gameState
-    this.winner = winner
+    this.winner = winner ?? null
     this.score = score
     this.gameStarted = gameStarted
     this.gameId = gameId
     this.ownerId = ownerId
+  }
+
+  setWinner(winner: WinnerType) {
+    this.winner = new Winner(winner)
   }
 }

@@ -24,6 +24,7 @@ import { MultiplayerRoomCreateProps } from './types/multiplayer-room-props.type'
 import Word from './states/word.state'
 import GameService from '../games/games.service'
 import { GUESS, WRONG_GUESS } from './constants/message.constant'
+import Winner from './states/winner.state'
 
 @Injectable()
 export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
@@ -106,7 +107,14 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
   async onJoin(client: Client, options: any, auth: { playerName: string }) {
     // Start the session's score as 0
     this.state.score.set(client.sessionId, 0)
-    this.state.totalScore.set(client.sessionId, 0)
+    this.state.totalScore.set(
+      client.sessionId,
+      new Winner({
+        id: client.sessionId,
+        name: auth.playerName,
+        score: 0,
+      }),
+    )
 
     // Add unique players into the room's 'players' state
     if (
@@ -299,7 +307,13 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
     const isWinner = await this.checkForWinner(message.guess)
 
     if (isWinner) {
-      this.state.winner = client.sessionId
+      this.state.setWinner({
+        id: client.sessionId,
+        name: this.state.players.find(
+          (player) => player.id === client.sessionId,
+        ).name,
+        score: this.getPlayerScore(),
+      })
       this.addScoreToWinner(client.sessionId)
       await this.stopCurrentRoundOrGame()
     } else {
@@ -375,29 +389,28 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
   }
 
   private addScoreToWinner(sessionId: string) {
-    let score: number
-
-    switch (this.state.cycle) {
-      case 1:
-        score = FIRST_CYCLE_SCORE
-        break
-      case 2:
-        score = SECOND_CYCLE_SCORE
-        break
-      case 3:
-        score = THIRD_CYCLE_SCORE
-        break
-      default:
-        score = 0
-    }
+    const score = this.getPlayerScore()
 
     if (this.state.score.has(sessionId)) {
       this.state.score.set(sessionId, score)
     }
 
     if (this.state.totalScore.has(sessionId)) {
-      const currentScore = this.state.totalScore.get(sessionId)
-      this.state.totalScore.set(sessionId, currentScore + score)
+      this.state.totalScore.get(sessionId).incrementScore(score)
+      // this.state.totalScore.set(sessionId, )
+    }
+  }
+
+  private getPlayerScore() {
+    switch (this.state.cycle) {
+      case 1:
+        return FIRST_CYCLE_SCORE
+      case 2:
+        return SECOND_CYCLE_SCORE
+      case 3:
+        return THIRD_CYCLE_SCORE
+      default:
+        return 0
     }
   }
 }
