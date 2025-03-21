@@ -371,8 +371,6 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
   private registerMessages() {
     this.onMessage('exit', (client) => client.leave())
 
-    // this.onMessage('start-game', () => this.startGame())
-
     this.onMessage('start-new-game', () => this.restartGame())
 
     this.onMessage(GUESS, (client, message: { guess: string }) =>
@@ -384,7 +382,7 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
       preparedAudioData[0] = 'data:audio/ogg;'
       preparedAudioData = preparedAudioData[0] + preparedAudioData[1]
 
-      this.broadcast('talk', preparedAudioData, { except: client })
+      this.broadcast('listen', preparedAudioData, { except: client })
     })
   }
 
