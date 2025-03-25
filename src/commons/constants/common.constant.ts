@@ -1,2 +1,2 @@
 export const MAX_PLAYERS_PER_ROOM_LIMIT = 8
-export const MAX_ROUNDS_PER_GAME_LIMIT = 5
+export const MAX_ROUNDS_PER_GAME_LIMIT = 10

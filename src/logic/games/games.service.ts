@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common'
 import PrismaService from 'src/prisma/prisma.service'
 import CreateGameDto from './dto/create-game.dto'
-import { TOTAL_GAME_ROUNDS } from '../../commons/constants/game-time.constant'
+import { MAX_ROUNDS_PER_GAME_LIMIT } from '../../commons/constants/common.constant'
 
 @Injectable()
 export default class GameService {
@@ -16,7 +16,10 @@ export default class GameService {
     // const words = await this.getWords(lastWord.id, TOTAL_GAME_ROUNDS)
     const randomWordIds = await this.prismaService.$queryRawUnsafe<
       { id: number }[]
-    >(`SELECT id FROM words ORDER BY random() LIMIT ${TOTAL_GAME_ROUNDS}`)
+    >(`SELECT id
+       FROM words
+       ORDER BY random()
+       LIMIT ${MAX_ROUNDS_PER_GAME_LIMIT}`)
 
     // Create a game and connect it with chosen words
     return this.prismaService.game.create({
