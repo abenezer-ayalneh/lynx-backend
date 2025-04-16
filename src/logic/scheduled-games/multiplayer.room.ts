@@ -143,8 +143,7 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
       (player) => player.id === client.sessionId,
     )
     if (indexToRemove >= 0) {
-      this.state.players.splice(indexToRemove, 1)
-
+      this.state.players.deleteAt(indexToRemove)
       // Decrement the number of players by one
       await this.setMetadata({
         ...this.metadata,
