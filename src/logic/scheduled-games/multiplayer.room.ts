@@ -281,17 +281,13 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
     this.state.waitingCountdownTime = 3
     this.state.gameStarted = false
     this.state.words = []
+    this.state.clearScore()
+    this.state.clearTotalScore()
 
-    const scheduledGame = await this.prismaService.scheduledGame.findUnique({
-      where: { id: this.state.gameId },
-    })
-
-    if (scheduledGame) {
-      await this.gameService.create(
-        { type: 'MULTIPLAYER', scheduledGameId: scheduledGame.id },
-        scheduledGame.created_by,
-      )
-    }
+    await this.gameService.create(
+      { type: 'MULTIPLAYER', scheduledGameId: this.state.gameId },
+      this.state.ownerId,
+    )
 
     // Start the game
     await this.startGame()

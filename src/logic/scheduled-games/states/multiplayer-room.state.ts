@@ -76,4 +76,16 @@ export default class MultiplayerRoomState extends Schema {
   setWinner(winner: WinnerType) {
     this.winner = new Winner(winner)
   }
+
+  clearScore() {
+    this.score.forEach((_, key) => {
+      this.score.set(key, 0)
+    })
+  }
+
+  clearTotalScore() {
+    this.totalScore.forEach((winner, key) => {
+      this.totalScore.set(key, new Winner({ ...winner, score: 0 }))
+    })
+  }
 }
