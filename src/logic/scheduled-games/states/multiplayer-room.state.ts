@@ -33,7 +33,9 @@ export default class MultiplayerRoomState extends Schema {
 
   @type({ map: 'number' }) score = new MapSchema<number>() // Scores of the players (key is ID and value is score)
 
-  @type({ map: Winner }) totalScore = new MapSchema<Winner>() // Total scores of the players (key is ID and value is total score)
+  @type({ map: Winner }) totalScore = new MapSchema<Winner>() // Total scores of the players (key is player session ID, and value is total score)
+
+  @type({ map: Winner }) sessionScore = new MapSchema<Winner>() // Total score summation of the players within one game session (key is player session ID, and value is total score)
 
   @type('boolean') gameStarted: boolean // Indicator for game start state
 
@@ -50,7 +52,6 @@ export default class MultiplayerRoomState extends Schema {
     words,
     gameState,
     winner,
-    score,
     gameStarted,
     gameId,
     ownerId,
@@ -67,7 +68,6 @@ export default class MultiplayerRoomState extends Schema {
     this.words = words
     this.gameState = gameState
     this.winner = winner ?? null
-    this.score = score
     this.gameStarted = gameStarted
     this.gameId = gameId
     this.ownerId = ownerId

@@ -1,6 +1,5 @@
 import { Client, Delayed, logger, Room } from 'colyseus'
 import { Injectable, Logger } from '@nestjs/common'
-import { MapSchema } from '@colyseus/schema'
 import PrismaService from '../../prisma/prisma.service'
 import MultiplayerRoomState from './states/multiplayer-room.state'
 import Player from './states/player.state'
@@ -76,7 +75,6 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
       words: [], // TODO get this from the DB
       gameState: 'START_COUNTDOWN',
       winner: null,
-      score: new MapSchema<number>(),
       gameStarted: false,
       gameId: data.gameId,
       ownerId: data.ownerId,
@@ -115,6 +113,14 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
         score: 0,
       }),
     )
+    this.state.sessionScore.set(
+      client.sessionId,
+      new Winner({
+        id: client.sessionId,
+        name: auth.playerName,
+        score: 0,
+      }),
+    )
 
     // Add unique players into the room's 'players' state
     if (
@@ -143,6 +149,9 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
       (player) => player.id === client.sessionId,
     )
     if (indexToRemove >= 0) {
+      this.state.score.delete(client.sessionId)
+      this.state.totalScore.delete(client.sessionId)
+      this.state.sessionScore.delete(client.sessionId)
       this.state.players.deleteAt(indexToRemove)
       // Decrement the number of players by one
       await this.setMetadata({
@@ -390,7 +399,10 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
 
     if (this.state.totalScore.has(sessionId)) {
       this.state.totalScore.get(sessionId).incrementScore(score)
-      // this.state.totalScore.set(sessionId, )
+    }
+
+    if (this.state.sessionScore.has(sessionId)) {
+      this.state.sessionScore.get(sessionId).incrementScore(score)
     }
   }
 
