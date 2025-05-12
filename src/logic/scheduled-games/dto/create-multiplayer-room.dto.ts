@@ -1,11 +1,4 @@
-import {
-  IsArray,
-  IsEmail,
-  IsEnum,
-  IsNotEmpty,
-  IsString,
-  ValidateIf,
-} from 'class-validator'
+import { IsArray, IsEmail, IsEnum, IsNotEmpty, IsString, ValidateIf } from 'class-validator'
 import { ScheduledGameType } from '@prisma/client'
 
 export default class CreateMultiplayerRoomDto {
@@ -30,15 +23,11 @@ export default class CreateMultiplayerRoomDto {
 
   @IsString()
   @IsNotEmpty()
-  @ValidateIf(
-    (thisClass) => thisClass.gameScheduleType === ScheduledGameType.FUTURE,
-  )
+  @ValidateIf((thisClass) => thisClass.gameScheduleType === ScheduledGameType.FUTURE)
   start_time: string
 
   @IsString()
   @IsNotEmpty()
-  @ValidateIf(
-    (thisClass) => thisClass.gameScheduleType === ScheduledGameType.FUTURE,
-  )
+  @ValidateIf((thisClass) => thisClass.gameScheduleType === ScheduledGameType.FUTURE)
   timezone: string
 }

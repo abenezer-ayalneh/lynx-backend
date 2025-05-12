@@ -12,10 +12,7 @@ export default class ScheduledGamesController {
   constructor(private readonly roomsService: ScheduledGamesService) {}
 
   @Post()
-  async create(
-    @ActiveUser() activePlayerData: ActivePlayerData,
-    @Body() createRoomDto: CreateMultiplayerRoomDto,
-  ) {
+  async create(@ActiveUser() activePlayerData: ActivePlayerData, @Body() createRoomDto: CreateMultiplayerRoomDto) {
     return this.roomsService.create(activePlayerData, createRoomDto)
   }
 

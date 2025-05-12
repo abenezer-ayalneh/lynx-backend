@@ -2,22 +2,12 @@ import { Client, Delayed, Room } from 'colyseus'
 import { Injectable, Logger } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
 import RoomState from './states/room.state'
-import {
-  FIRST_CYCLE_TIME,
-  MID_GAME_COUNTDOWN,
-  SECOND_CYCLE_TIME,
-  START_COUNTDOWN,
-  THIRD_CYCLE_TIME,
-} from '../../commons/constants/game-time.constant'
+import { FIRST_CYCLE_TIME, MID_GAME_COUNTDOWN, SECOND_CYCLE_TIME, START_COUNTDOWN, THIRD_CYCLE_TIME } from '../../commons/constants/game-time.constant'
 import PrismaService from '../../prisma/prisma.service'
 import Word from './states/word.state'
 import { RoomCreateProps } from './types/solo-room-props.type'
 import { GUESS, WRONG_GUESS } from './constants/message.constant'
-import {
-  FIRST_CYCLE_SCORE,
-  SECOND_CYCLE_SCORE,
-  THIRD_CYCLE_SCORE,
-} from './constants/score.constant'
+import { FIRST_CYCLE_SCORE, SECOND_CYCLE_SCORE, THIRD_CYCLE_SCORE } from './constants/score.constant'
 import Winner from './states/winner.state'
 
 @Injectable()

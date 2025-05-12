@@ -1,10 +1,4 @@
-import {
-  CanActivate,
-  ExecutionContext,
-  Inject,
-  Injectable,
-  UnauthorizedException,
-} from '@nestjs/common'
+import { CanActivate, ExecutionContext, Inject, Injectable, UnauthorizedException } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
 import { ConfigType } from '@nestjs/config'
 import { Request } from 'express'
@@ -28,10 +22,7 @@ export default class AccessTokenGuard implements CanActivate {
     }
 
     try {
-      request[REQUEST_PLAYER_KEY] = await this.jwtService.verifyAsync(
-        token,
-        this.jwtConfiguration,
-      )
+      request[REQUEST_PLAYER_KEY] = await this.jwtService.verifyAsync(token, this.jwtConfiguration)
     } catch (e) {
       throw new UnauthorizedException()
     }

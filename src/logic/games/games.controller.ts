@@ -8,10 +8,7 @@ export default class GameController {
   constructor(private readonly gameService: GameService) {}
 
   @Post()
-  create(
-    @Body() createGameDto: CreateGameDto,
-    @ActiveUser('sub') playerId: string,
-  ) {
+  create(@Body() createGameDto: CreateGameDto, @ActiveUser('sub') playerId: string) {
     return this.gameService.create(createGameDto, +playerId)
   }
 

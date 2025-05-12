@@ -1,11 +1,4 @@
-import {
-  IsArray,
-  IsEmail,
-  IsNotEmpty,
-  IsObject,
-  IsOptional,
-  IsString,
-} from 'class-validator'
+import { IsArray, IsEmail, IsNotEmpty, IsObject, IsOptional, IsString } from 'class-validator'
 
 export default class SendMailDto {
   @IsEmail(

@@ -86,9 +86,7 @@ describe('AccessTokenGuard', () => {
 
     // Act & Assert
     expect.assertions(1)
-    await expect(
-      accessTokenGuard.canActivate(executionContext),
-    ).rejects.toThrow(UnauthorizedException)
+    await expect(accessTokenGuard.canActivate(executionContext)).rejects.toThrow(UnauthorizedException)
   })
 
   it('canActivate => should throw UnauthorizedException if token is invalid', async () => {
@@ -104,8 +102,6 @@ describe('AccessTokenGuard', () => {
 
     // Act & Assert
     expect.assertions(1)
-    await expect(
-      accessTokenGuard.canActivate(executionContext),
-    ).rejects.toThrow(UnauthorizedException)
+    await expect(accessTokenGuard.canActivate(executionContext)).rejects.toThrow(UnauthorizedException)
   })
 })

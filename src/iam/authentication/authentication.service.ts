@@ -1,9 +1,4 @@
-import {
-  ConflictException,
-  Inject,
-  Injectable,
-  UnauthorizedException,
-} from '@nestjs/common'
+import { ConflictException, Inject, Injectable, UnauthorizedException } from '@nestjs/common'
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library'
 import { JwtService } from '@nestjs/jwt'
 import { ConfigType } from '@nestjs/config'
@@ -58,10 +53,7 @@ export default class AuthenticationService {
       throw new UnauthorizedException('Player does not exists')
     }
 
-    const isEqual = await this.hashingService.compare(
-      signInDto.password,
-      player.password,
-    )
+    const isEqual = await this.hashingService.compare(signInDto.password, player.password)
     if (!isEqual) {
       throw new UnauthorizedException('Email or password mismatch')
     }
@@ -72,16 +64,8 @@ export default class AuthenticationService {
   async generateTokens(player: Player) {
     const refreshTokenId = randomUUID()
     const [accessToken, refreshToken] = await Promise.all([
-      this.signToken<Partial<ActivePlayerData>>(
-        player.id,
-        this.jwtConfiguration.accessTokenTtl,
-        { email: player.email },
-      ),
-      this.signToken<Partial<RefreshTokenData>>(
-        player.id,
-        this.jwtConfiguration.refreshTokenTtl,
-        { refreshTokenId },
-      ),
+      this.signToken<Partial<ActivePlayerData>>(player.id, this.jwtConfiguration.accessTokenTtl, { email: player.email }),
+      this.signToken<Partial<RefreshTokenData>>(player.id, this.jwtConfiguration.refreshTokenTtl, { refreshTokenId }),
     ])
     await this.refreshTokenIdsStorage.insert(player.id, refreshTokenId)
     return { accessToken, refreshToken }
@@ -104,9 +88,7 @@ export default class AuthenticationService {
 
   async refreshTokens(refreshTokenDto: RefreshTokenDto) {
     try {
-      const { sub, refreshTokenId } = await this.jwtService.verifyAsync<
-        Pick<ActivePlayerData, 'sub'> & RefreshTokenData
-      >(refreshTokenDto.refreshToken, {
+      const { sub, refreshTokenId } = await this.jwtService.verifyAsync<Pick<ActivePlayerData, 'sub'> & RefreshTokenData>(refreshTokenDto.refreshToken, {
         secret: this.jwtConfiguration.secret,
         audience: this.jwtConfiguration.audience,
         issuer: this.jwtConfiguration.issuer,
@@ -115,10 +97,7 @@ export default class AuthenticationService {
         where: { id: sub },
       })
 
-      const isValid = await this.refreshTokenIdsStorage.validate(
-        player.id,
-        refreshTokenId,
-      )
+      const isValid = await this.refreshTokenIdsStorage.validate(player.id, refreshTokenId)
       if (isValid) {
         await this.refreshTokenIdsStorage.invalidate(player.id)
       } else {

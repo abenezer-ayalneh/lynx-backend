@@ -44,24 +44,19 @@ export default class LobbyRoom extends Room<LobbyRoomState> {
    */
   private registerMessages() {
     this.onMessage('startGame', (_, message) => {
-      this.gameService
-        .create(
-          { type: 'MULTIPLAYER', scheduledGameId: this.state.gameId },
-          Number(message.playerId),
-        )
-        .then(() => {
-          matchMaker
-            .createRoom('multiplayer', {
-              gameId: this.state.gameId,
-              ownerId: this.state.ownerId,
+      this.gameService.create({ type: 'MULTIPLAYER', scheduledGameId: this.state.gameId }, Number(message.playerId)).then(() => {
+        matchMaker
+          .createRoom('multiplayer', {
+            gameId: this.state.gameId,
+            ownerId: this.state.ownerId,
+          })
+          .then(async (room) => {
+            this.broadcast('startGame', {
+              roomId: room.roomId,
             })
-            .then(async (room) => {
-              this.broadcast('startGame', {
-                roomId: room.roomId,
-              })
-              await this.disconnect()
-            })
-        })
+            await this.disconnect()
+          })
+      })
     })
   }
 }

@@ -14,9 +14,7 @@ export default class GameService {
   async create(createGameDto: CreateGameDto, playerId: number) {
     // Choose random words(their IDs) from the total
     // const words = await this.getWords(lastWord.id, TOTAL_GAME_ROUNDS)
-    const randomWordIds = await this.prismaService.$queryRawUnsafe<
-      { id: number }[]
-    >(`SELECT id
+    const randomWordIds = await this.prismaService.$queryRawUnsafe<{ id: number }[]>(`SELECT id
        FROM words
        ORDER BY random()
        LIMIT ${MAX_ROUNDS_PER_GAME_LIMIT}`)
@@ -32,9 +30,7 @@ export default class GameService {
           connect: randomWordIds,
         },
         ScheduledGame: {
-          connect: createGameDto.scheduledGameId
-            ? { id: createGameDto.scheduledGameId }
-            : undefined,
+          connect: createGameDto.scheduledGameId ? { id: createGameDto.scheduledGameId } : undefined,
         },
       },
       select: {
@@ -74,14 +70,9 @@ export default class GameService {
     })
   }
 
-  async getWords(
-    total: number,
-    uniqueNumbersQuantity: number,
-  ): Promise<number[]> {
+  async getWords(total: number, uniqueNumbersQuantity: number): Promise<number[]> {
     if (total < uniqueNumbersQuantity) {
-      throw new Error(
-        `Total numbers must be at least ${uniqueNumbersQuantity} to pick ${uniqueNumbersQuantity} unique numbers.`,
-      )
+      throw new Error(`Total numbers must be at least ${uniqueNumbersQuantity} to pick ${uniqueNumbersQuantity} unique numbers.`)
     }
 
     // Helper function to generate a random integer between min and max (inclusive)

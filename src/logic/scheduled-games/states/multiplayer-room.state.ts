@@ -4,6 +4,7 @@ import Word from './word.state'
 import { MultiplayerRoomProps } from '../types/multiplayer-room-props.type'
 import Winner from './winner.state'
 import { Winner as WinnerType } from '../types/winner.type'
+import RestartGameVote from './restart-game-vote.state'
 
 export default class MultiplayerRoomState extends Schema {
   @type('number') gameId: number // The scheduled game's ID
@@ -39,6 +40,8 @@ export default class MultiplayerRoomState extends Schema {
 
   @type('boolean') gameStarted: boolean // Indicator for game start state
 
+  @type({ map: RestartGameVote }) restartGameVote = new MapSchema<RestartGameVote>() // Vote state for game restart
+
   words: Word[] // All the words selected for this game
 
   constructor({
@@ -73,17 +76,33 @@ export default class MultiplayerRoomState extends Schema {
     this.ownerId = ownerId
   }
 
-  setWinner(winner: WinnerType) {
+  /**
+   * Sets the winner of the game by creating a new Winner instance with the provided winner data.
+   *
+   * @param {WinnerType} winner - The data representing the winner.
+   * @return {void} No return value.
+   */
+  setWinner(winner: WinnerType): void {
     this.winner = new Winner(winner)
   }
 
-  clearScore() {
+  /**
+   * Resets all the scores in the score map to zero.
+   *
+   * @return {void} Does not return a value.
+   */
+  clearScore(): void {
     this.score.forEach((_, key) => {
       this.score.set(key, 0)
     })
   }
 
-  clearTotalScore() {
+  /**
+   * Resets the total score of all winners by setting their score to 0.
+   *
+   * @return {void} Does not return a value.
+   */
+  clearTotalScore(): void {
     this.totalScore.forEach((winner, key) => {
       this.totalScore.set(key, new Winner({ ...winner, score: 0 }))
     })

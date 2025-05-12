@@ -3,12 +3,7 @@ import { ConfigService } from '@nestjs/config'
 import { addMinutes, constructNow, format, parseISO } from 'date-fns'
 import { matchMaker } from 'colyseus'
 
-import {
-  ScheduledGame,
-  ScheduledGameReminder,
-  ScheduledGameStatus,
-  ScheduledGameType,
-} from '@prisma/client'
+import { ScheduledGame, ScheduledGameReminder, ScheduledGameStatus, ScheduledGameType } from '@prisma/client'
 import { Cron } from '@nestjs/schedule'
 import { tz } from '@date-fns/tz/tz'
 import CreateMultiplayerRoomDto from './dto/create-multiplayer-room.dto'
@@ -31,10 +26,7 @@ export default class ScheduledGamesService {
     this.logger = new Logger('ScheduledGamesService')
   }
 
-  async create(
-    activePlayerData: ActivePlayerData,
-    createRoomDto: CreateMultiplayerRoomDto,
-  ) {
+  async create(activePlayerData: ActivePlayerData, createRoomDto: CreateMultiplayerRoomDto) {
     if (createRoomDto.gameScheduleType === ScheduledGameType.FUTURE) {
       return this.handleFutureScheduledGame(activePlayerData, createRoomDto)
     }
@@ -116,14 +108,8 @@ export default class ScheduledGamesService {
     })
   }
 
-  private async handleFutureScheduledGame(
-    activePlayerData: ActivePlayerData,
-    createRoomDto: CreateMultiplayerRoomDto,
-  ) {
-    const emailsToSendInvitationTo = [
-      ...createRoomDto.emails,
-      activePlayerData.email,
-    ]
+  private async handleFutureScheduledGame(activePlayerData: ActivePlayerData, createRoomDto: CreateMultiplayerRoomDto) {
+    const emailsToSendInvitationTo = [...createRoomDto.emails, activePlayerData.email]
 
     const startTimeIso = parseISO(createRoomDto.start_time, {
       in: tz(createRoomDto.timezone),
@@ -177,10 +163,7 @@ export default class ScheduledGamesService {
     return ''
   }
 
-  private async handleInstantScheduledGame(
-    activePlayerData: ActivePlayerData,
-    createRoomDto: CreateMultiplayerRoomDto,
-  ) {
+  private async handleInstantScheduledGame(activePlayerData: ActivePlayerData, createRoomDto: CreateMultiplayerRoomDto) {
     const emailsToSendInvitationTo = [
       ...createRoomDto.emails,
       // activePlayerData.email,

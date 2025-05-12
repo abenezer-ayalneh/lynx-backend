@@ -1,9 +1,4 @@
-import {
-  CanActivate,
-  ExecutionContext,
-  Injectable,
-  UnauthorizedException,
-} from '@nestjs/common'
+import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common'
 import { Reflector } from '@nestjs/core'
 import AccessTokenGuard from '../access-token/access-token.guard'
 import AuthType from '../../enums/auth-type.enum'
@@ -13,11 +8,10 @@ import { AUTH_TYPE_KEY } from '../../decorators/auth.decorator'
 export default class AuthenticationGuard implements CanActivate {
   private static readonly defaultAuthType = AuthType.Bearer
 
-  private readonly authGuardMap: Record<AuthType, CanActivate | CanActivate[]> =
-    {
-      [AuthType.Bearer]: this.accessTokenGuard,
-      [AuthType.None]: { canActivate: () => true },
-    }
+  private readonly authGuardMap: Record<AuthType, CanActivate | CanActivate[]> = {
+    [AuthType.Bearer]: this.accessTokenGuard,
+    [AuthType.None]: { canActivate: () => true },
+  }
 
   constructor(
     private readonly reflector: Reflector,
@@ -25,14 +19,11 @@ export default class AuthenticationGuard implements CanActivate {
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const authTypes = this.reflector.getAllAndOverride<AuthType[]>(
-      AUTH_TYPE_KEY,
-      [context.getHandler(), context.getClass()],
-    ) ?? [AuthenticationGuard.defaultAuthType]
+    const authTypes = this.reflector.getAllAndOverride<AuthType[]>(AUTH_TYPE_KEY, [context.getHandler(), context.getClass()]) ?? [
+      AuthenticationGuard.defaultAuthType,
+    ]
 
-    const guards = authTypes
-      .map((type: AuthType) => this.authGuardMap[type])
-      .flat()
+    const guards = authTypes.map((type: AuthType) => this.authGuardMap[type]).flat()
     let error = new UnauthorizedException()
     const canActivateArray = []
 

@@ -3,22 +3,9 @@ import { Injectable, Logger } from '@nestjs/common'
 import PrismaService from '../../prisma/prisma.service'
 import MultiplayerRoomState from './states/multiplayer-room.state'
 import Player from './states/player.state'
-import {
-  FIRST_CYCLE_TIME,
-  MID_GAME_COUNTDOWN,
-  SECOND_CYCLE_TIME,
-  START_COUNTDOWN,
-  THIRD_CYCLE_TIME,
-} from '../../commons/constants/game-time.constant'
-import {
-  FIRST_CYCLE_SCORE,
-  SECOND_CYCLE_SCORE,
-  THIRD_CYCLE_SCORE,
-} from './constants/score.constant'
-import {
-  MAX_PLAYERS_PER_ROOM_LIMIT,
-  MAX_ROUNDS_PER_GAME_LIMIT,
-} from '../../commons/constants/common.constant'
+import { FIRST_CYCLE_TIME, MID_GAME_COUNTDOWN, SECOND_CYCLE_TIME, START_COUNTDOWN, THIRD_CYCLE_TIME } from '../../commons/constants/game-time.constant'
+import { FIRST_CYCLE_SCORE, SECOND_CYCLE_SCORE, THIRD_CYCLE_SCORE } from './constants/score.constant'
+import { MAX_PLAYERS_PER_ROOM_LIMIT, MAX_ROUNDS_PER_GAME_LIMIT } from '../../commons/constants/common.constant'
 import { MultiplayerRoomCreateProps } from './types/multiplayer-room-props.type'
 import Word from './states/word.state'
 import GameService from '../games/games.service'
@@ -123,11 +110,7 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
     )
 
     // Add unique players into the room's 'players' state
-    if (
-      !this.state.players.some(
-        (joinedPlayer) => joinedPlayer.id === client.sessionId,
-      )
-    ) {
+    if (!this.state.players.some((joinedPlayer) => joinedPlayer.id === client.sessionId)) {
       this.state.players.push(new Player(client.sessionId, auth.playerName))
 
       // Increment the number of players by one
@@ -145,9 +128,7 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
    * @param client
    */
   async onLeave(client: Client) {
-    const indexToRemove = this.state.players.findIndex(
-      (player) => player.id === client.sessionId,
-    )
+    const indexToRemove = this.state.players.findIndex((player) => player.id === client.sessionId)
     if (indexToRemove >= 0) {
       this.state.score.delete(client.sessionId)
       this.state.totalScore.delete(client.sessionId)
@@ -292,10 +273,7 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
     this.state.clearScore()
     this.state.clearTotalScore()
 
-    await this.gameService.create(
-      { type: 'MULTIPLAYER', scheduledGameId: this.state.gameId },
-      this.state.ownerId,
-    )
+    await this.gameService.create({ type: 'MULTIPLAYER', scheduledGameId: this.state.gameId }, this.state.ownerId)
 
     // Start the game
     await this.startGame()
@@ -313,9 +291,7 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
     if (isWinner) {
       this.state.setWinner({
         id: client.sessionId,
-        name: this.state.players.find(
-          (player) => player.id === client.sessionId,
-        ).name,
+        name: this.state.players.find((player) => player.id === client.sessionId).name,
         score: this.getPlayerScore(),
       })
       this.addScoreToWinner(client.sessionId)
@@ -377,9 +353,7 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
 
     this.onMessage('start-new-game', () => this.restartGame())
 
-    this.onMessage(GUESS, (client, message: { guess: string }) =>
-      this.guess(client, message),
-    )
+    this.onMessage(GUESS, (client, message: { guess: string }) => this.guess(client, message))
 
     this.onMessage('talk', (client, payload) => {
       let preparedAudioData = payload.split(';')

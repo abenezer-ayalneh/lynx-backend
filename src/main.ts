@@ -1,9 +1,4 @@
-import {
-  INestApplication,
-  Logger,
-  ValidationError,
-  ValidationPipe,
-} from '@nestjs/common'
+import { INestApplication, Logger, ValidationError, ValidationPipe } from '@nestjs/common'
 import { NestFactory } from '@nestjs/core'
 import { WinstonModule } from 'nest-winston'
 import { WebSocketTransport } from '@colyseus/ws-transport'
@@ -19,10 +14,7 @@ import SoloRoom from './logic/scheduled-games/solo.room'
 import MultiplayerRoom from './logic/scheduled-games/multiplayer.room'
 import LobbyRoom from './logic/scheduled-games/lobby.room'
 
-function injectDeps<T extends { new (...args: any[]): Room }>(
-  app: INestApplication,
-  target: T,
-): T {
+function injectDeps<T extends { new (...args: any[]): Room }>(app: INestApplication, target: T): T {
   const selfDeps = Reflect.getMetadata('self:paramtypes', target) || []
   const dependencies = Reflect.getMetadata('design:paramtypes', target) || []
 
@@ -71,9 +63,7 @@ async function bootstrap() {
 
   // Enable CORS from allowed origins listed in .env
   app.enableCors({
-    origin: configService.get('CORS_ALLOWED_ORIGINS')
-      ? configService.get('CORS_ALLOWED_ORIGINS').split(',')
-      : false,
+    origin: configService.get('CORS_ALLOWED_ORIGINS') ? configService.get('CORS_ALLOWED_ORIGINS').split(',') : false,
   })
 
   // Add an 'api' prefix to all controller routes
@@ -117,9 +107,7 @@ async function bootstrap() {
   await app.init()
 
   // Initialize the colyseus server
-  await colyseusServer
-    .listen(port)
-    .then(async () => logger.verbose(`Application running at: ${port}`))
+  await colyseusServer.listen(port).then(async () => logger.verbose(`Application running at: ${port}`))
 }
 
 bootstrap()

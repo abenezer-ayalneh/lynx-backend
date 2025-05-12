@@ -33,9 +33,7 @@ export default class LogicService implements OnApplicationShutdown {
 
   async onApplicationShutdown(sig) {
     if (!this.server) return
-    this.logger.warn(
-      `Caught signal ${sig}. Game service shutting down on ${new Date()}.`,
-    )
+    this.logger.warn(`Caught signal ${sig}. Game service shutting down on ${new Date()}.`)
     await this.server.gracefullyShutdown()
   }
 }

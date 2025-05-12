@@ -1,8 +1,4 @@
-import {
-  OnGatewayConnection,
-  OnGatewayInit,
-  WebSocketGateway,
-} from '@nestjs/websockets'
+import { OnGatewayConnection, OnGatewayInit, WebSocketGateway } from '@nestjs/websockets'
 import { Server, Socket } from 'socket.io'
 import { DefaultEventsMap } from 'socket.io/dist/typed-events'
 import { Logger } from '@nestjs/common'
@@ -14,9 +10,7 @@ import { SocketPlayerStatusType, PlayerStatusType } from './types/socket.type'
     origin: '*',
   },
 })
-export default class WebsocketGateway
-  implements OnGatewayInit, OnGatewayConnection
-{
+export default class WebsocketGateway implements OnGatewayInit, OnGatewayConnection {
   logger: Logger
 
   connectedPlayers: SocketPlayerStatusType | undefined = {}
@@ -63,31 +57,19 @@ export default class WebsocketGateway
       this.connectedPlayers[client.id] = data
       client.join(data.room)
 
-      this.websocketService.socket
-        .to(data.room)
-        .emit('update-players', this.returnPlayersInTheRoom(data.room))
+      this.websocketService.socket.to(data.room).emit('update-players', this.returnPlayersInTheRoom(data.room))
     })
 
     client.on('leave-room', (room: string) => {
       client.leave(room)
-      this.websocketService.socket
-        .to(room)
-        .emit(
-          'remove-player',
-          this.returnPlayersInARoomWithPlayerRemoved(client.id),
-        )
+      this.websocketService.socket.to(room).emit('remove-player', this.returnPlayersInARoomWithPlayerRemoved(client.id))
     })
 
     // Remove the client from the client list and emit remove-player event
     client.on('disconnect', () => {
       this.logger.verbose(`Disconnected Device: ${client.id}`)
       if (this.connectedPlayers[client.id]?.room) {
-        this.websocketService.socket
-          .to(this.connectedPlayers[client.id].room)
-          .emit(
-            'remove-player',
-            this.returnPlayersInARoomWithPlayerRemoved(client.id),
-          )
+        this.websocketService.socket.to(this.connectedPlayers[client.id].room).emit('remove-player', this.returnPlayersInARoomWithPlayerRemoved(client.id))
       }
       delete this.connectedPlayers[client.id]
     })

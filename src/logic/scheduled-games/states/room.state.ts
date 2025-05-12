@@ -33,20 +33,7 @@ export default class RoomState extends Schema {
 
   playerId: number
 
-  constructor({
-    word,
-    guessing,
-    round,
-    totalRound,
-    time,
-    cycle,
-    waitingCountdownTime,
-    words,
-    gameState,
-    winner,
-    score,
-    totalScore,
-  }: RoomProps) {
+  constructor({ word, guessing, round, totalRound, time, cycle, waitingCountdownTime, words, gameState, winner, score, totalScore }: RoomProps) {
     super()
     this.guessing = guessing
     this.round = round

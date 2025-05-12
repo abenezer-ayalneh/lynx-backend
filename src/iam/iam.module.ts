@@ -12,10 +12,7 @@ import RefreshTokenIdsStorage from './authentication/refresh-token-ids.storage/r
 import AuthenticationGuard from './authentication/guards/authentication/authentication.guard'
 
 @Module({
-  imports: [
-    JwtModule.registerAsync(jwtConfig.asProvider()),
-    ConfigModule.forFeature(jwtConfig),
-  ],
+  imports: [JwtModule.registerAsync(jwtConfig.asProvider()), ConfigModule.forFeature(jwtConfig)],
   providers: [
     {
       provide: HashingService,
