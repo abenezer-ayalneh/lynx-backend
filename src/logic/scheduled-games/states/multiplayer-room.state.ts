@@ -107,4 +107,16 @@ export default class MultiplayerRoomState extends Schema {
       this.totalScore.set(key, new Winner({ ...winner, score: 0 }))
     })
   }
+
+  /**
+   * Records a player's vote for restarting the game.
+   *
+   * @param sessionId
+   * @param {boolean} vote - A boolean indicating the player's vote.
+   *                         Pass `true` to vote for a restart, or `false` against it.
+   * @return {void} - Does not return a value.
+   */
+  voteForGameRestart(sessionId: string, vote: boolean): void {
+    this.restartGameVote.set(sessionId, new RestartGameVote({ id: sessionId, vote }))
+  }
 }

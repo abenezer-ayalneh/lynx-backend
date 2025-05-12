@@ -362,6 +362,10 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
 
       this.broadcast('listen', preparedAudioData, { except: client })
     })
+
+    this.onMessage('game-restart-vote', (client, message: { vote: boolean }) => {
+      this.state.voteForGameRestart(client.sessionId, message.vote)
+    })
   }
 
   private addScoreToWinner(sessionId: string) {
