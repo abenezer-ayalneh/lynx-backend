@@ -1,5 +1,5 @@
 import Word from '../states/word.state'
-import Winner from '../states/winner.state'
+import Score from '../states/score.state'
 
 export type RoomProps = {
   word: Word
@@ -11,7 +11,7 @@ export type RoomProps = {
   cycle?: number
   waitingCountdownTime?: number
   gameState: 'START_COUNTDOWN' | 'ROUND_END' | 'GAME_STARTED' | 'GAME_END'
-  winner?: Winner | null
+  winner?: Score | null
   score: number
   totalScore: number
 }

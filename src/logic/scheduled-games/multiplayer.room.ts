@@ -10,7 +10,7 @@ import { MultiplayerRoomCreateProps } from './types/multiplayer-room-props.type'
 import Word from './states/word.state'
 import GameService from '../games/games.service'
 import { GUESS, WRONG_GUESS } from './constants/message.constant'
-import Winner from './states/winner.state'
+import Score from './states/score.state'
 
 @Injectable()
 export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
@@ -94,7 +94,7 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
     this.state.score.set(client.sessionId, 0)
     this.state.totalScore.set(
       client.sessionId,
-      new Winner({
+      new Score({
         id: client.sessionId,
         name: auth.playerName,
         score: 0,
@@ -102,7 +102,7 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
     )
     this.state.sessionScore.set(
       client.sessionId,
-      new Winner({
+      new Score({
         id: client.sessionId,
         name: auth.playerName,
         score: 0,
@@ -134,6 +134,7 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
       this.state.totalScore.delete(client.sessionId)
       this.state.sessionScore.delete(client.sessionId)
       this.state.players.deleteAt(indexToRemove)
+
       // Decrement the number of players by one
       await this.setMetadata({
         ...this.metadata,

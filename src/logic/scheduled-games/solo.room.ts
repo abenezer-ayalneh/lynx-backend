@@ -8,7 +8,7 @@ import Word from './states/word.state'
 import { RoomCreateProps } from './types/solo-room-props.type'
 import { GUESS, WRONG_GUESS } from './constants/message.constant'
 import { FIRST_CYCLE_SCORE, SECOND_CYCLE_SCORE, THIRD_CYCLE_SCORE } from './constants/score.constant'
-import Winner from './states/winner.state'
+import Score from './states/score.state'
 
 @Injectable()
 export default class SoloRoom extends Room<RoomState> {
@@ -92,7 +92,7 @@ export default class SoloRoom extends Room<RoomState> {
 
     this.state.totalScore += playerScore
     this.state.score = playerScore
-    this.state.winner = new Winner({
+    this.state.winner = new Score({
       id: sessionId,
       name: 'Player Name',
       score: playerScore,

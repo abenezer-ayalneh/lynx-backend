@@ -2,9 +2,8 @@ import { ArraySchema, MapSchema, Schema, type } from '@colyseus/schema'
 import Player from './player.state'
 import Word from './word.state'
 import { MultiplayerRoomProps } from '../types/multiplayer-room-props.type'
-import Winner from './winner.state'
-import { Winner as WinnerType } from '../types/winner.type'
-import RestartGameVote from './restart-game-vote.state'
+import Score from './score.state'
+import { Score as WinnerType } from '../types/winner.type'
 
 export default class MultiplayerRoomState extends Schema {
   @type('number') gameId: number // The scheduled game's ID
@@ -30,17 +29,15 @@ export default class MultiplayerRoomState extends Schema {
   @type('string')
   gameState: 'START_COUNTDOWN' | 'ROUND_END' | 'GAME_STARTED' | 'GAME_END' // The state the game is currently in
 
-  @type(Winner) winner: Winner | null // The winner
+  @type(Score) winner: Score | null // The winner
 
   @type({ map: 'number' }) score = new MapSchema<number>() // Scores of the players (key is ID and value is score)
 
-  @type({ map: Winner }) totalScore = new MapSchema<Winner>() // Total scores of the players (key is player session ID, and value is total score)
+  @type({ map: Score }) totalScore = new MapSchema<Score>() // Total scores of the players (key is player session ID, and value is total score)
 
-  @type({ map: Winner }) sessionScore = new MapSchema<Winner>() // Total score summation of the players within one game session (key is player session ID, and value is total score)
+  @type({ map: Score }) sessionScore = new MapSchema<Score>() // Total score summation of the players within one game session (key is player session ID, and value is total score)
 
   @type('boolean') gameStarted: boolean // Indicator for game start state
-
-  @type({ map: RestartGameVote }) restartGameVote = new MapSchema<RestartGameVote>() // Vote state for game restart
 
   words: Word[] // All the words selected for this game
 
@@ -83,7 +80,7 @@ export default class MultiplayerRoomState extends Schema {
    * @return {void} No return value.
    */
   setWinner(winner: WinnerType): void {
-    this.winner = new Winner(winner)
+    this.winner = new Score(winner)
   }
 
   /**
@@ -104,7 +101,7 @@ export default class MultiplayerRoomState extends Schema {
    */
   clearTotalScore(): void {
     this.totalScore.forEach((winner, key) => {
-      this.totalScore.set(key, new Winner({ ...winner, score: 0 }))
+      this.totalScore.set(key, new Score({ ...winner, score: 0 }))
     })
   }
 
@@ -117,6 +114,9 @@ export default class MultiplayerRoomState extends Schema {
    * @return {void} - Does not return a value.
    */
   voteForGameRestart(sessionId: string, vote: boolean): void {
-    this.restartGameVote.set(sessionId, new RestartGameVote({ id: sessionId, vote }))
+    if (this.totalScore.has(sessionId)) {
+      const restartGameVote = this.totalScore.get(sessionId)
+      restartGameVote.voteForRestart(vote)
+    }
   }
 }

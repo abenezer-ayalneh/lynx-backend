@@ -1,7 +1,7 @@
 import { Schema, type } from '@colyseus/schema'
 import Word from './word.state'
 import { RoomProps } from '../types/solo-room-props.type'
-import Winner from './winner.state'
+import Score from './score.state'
 
 export default class RoomState extends Schema {
   @type('boolean') guessing: boolean
@@ -23,7 +23,7 @@ export default class RoomState extends Schema {
   @type('string')
   gameState: 'START_COUNTDOWN' | 'ROUND_END' | 'GAME_STARTED' | 'GAME_END'
 
-  @type(Winner) winner: Winner | null // The winner
+  @type(Score) winner: Score | null // The winner
 
   @type('number') score: number
 
