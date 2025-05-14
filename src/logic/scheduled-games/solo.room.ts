@@ -2,12 +2,19 @@ import { Client, Delayed, Room } from 'colyseus'
 import { Injectable, Logger } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
 import RoomState from './states/room.state'
-import { FIRST_CYCLE_TIME, MID_GAME_COUNTDOWN, SECOND_CYCLE_TIME, START_COUNTDOWN, THIRD_CYCLE_TIME } from '../../commons/constants/game-time.constant'
+import {
+  FIRST_CYCLE_TIME,
+  FOURTH_CYCLE_TIME,
+  MID_GAME_COUNTDOWN,
+  SECOND_CYCLE_TIME,
+  START_COUNTDOWN,
+  THIRD_CYCLE_TIME,
+} from '../../commons/constants/game-time.constant'
 import PrismaService from '../../prisma/prisma.service'
 import Word from './states/word.state'
 import { RoomCreateProps } from './types/solo-room-props.type'
 import { GUESS, WRONG_GUESS } from './constants/message.constant'
-import { FIRST_CYCLE_SCORE, SECOND_CYCLE_SCORE, THIRD_CYCLE_SCORE } from './constants/score.constant'
+import { FIRST_CYCLE_SCORE, FOURTH_CYCLE_SCORE, SECOND_CYCLE_SCORE, THIRD_CYCLE_SCORE } from './constants/score.constant'
 import Score from './states/score.state'
 
 @Injectable()
@@ -86,6 +93,9 @@ export default class SoloRoom extends Room<RoomState> {
       case 3:
         playerScore = THIRD_CYCLE_SCORE
         break
+      case 4:
+        playerScore = FOURTH_CYCLE_SCORE
+        break
       default:
         playerScore = 0
     }
@@ -163,7 +173,7 @@ export default class SoloRoom extends Room<RoomState> {
 
       if (this.state.time <= 0) {
         this.state.time = SECOND_CYCLE_TIME
-        this.state.word.cues[3].shown = true
+        this.state.word.cues[2].shown = true
         this.gameTimeInterval.clear()
         this.secondCycle()
       }
@@ -180,7 +190,7 @@ export default class SoloRoom extends Room<RoomState> {
 
       if (this.state.time <= 0) {
         this.state.time = THIRD_CYCLE_TIME
-        this.state.word.cues[4].shown = true
+        this.state.word.cues[3].shown = true
         this.gameTimeInterval.clear()
         this.thirdCycle()
       }
@@ -194,6 +204,25 @@ export default class SoloRoom extends Room<RoomState> {
    */
   thirdCycle() {
     this.state.cycle = 3
+    this.gameTimeInterval = this.clock.setInterval(async () => {
+      this.state.time -= 1
+
+      if (this.state.time <= 0) {
+        this.state.time = FOURTH_CYCLE_TIME
+        this.state.word.cues[4].shown = true
+        this.gameTimeInterval.clear()
+        this.fourthCycle()
+      }
+    }, 1000)
+  }
+
+  /**
+   * Run the fourth cycle of the current game round.
+   * Plus decides whether to end the round or the whole game based on
+   * remaining words
+   */
+  fourthCycle() {
+    this.state.cycle = 4
     this.gameTimeInterval = this.clock.setInterval(async () => {
       this.state.time -= 1
 

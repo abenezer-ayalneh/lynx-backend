@@ -3,8 +3,15 @@ import { Injectable, Logger } from '@nestjs/common'
 import PrismaService from '../../prisma/prisma.service'
 import MultiplayerRoomState from './states/multiplayer-room.state'
 import Player from './states/player.state'
-import { FIRST_CYCLE_TIME, MID_GAME_COUNTDOWN, SECOND_CYCLE_TIME, START_COUNTDOWN, THIRD_CYCLE_TIME } from '../../commons/constants/game-time.constant'
-import { FIRST_CYCLE_SCORE, SECOND_CYCLE_SCORE, THIRD_CYCLE_SCORE } from './constants/score.constant'
+import {
+  FIRST_CYCLE_TIME,
+  FOURTH_CYCLE_TIME,
+  MID_GAME_COUNTDOWN,
+  SECOND_CYCLE_TIME,
+  START_COUNTDOWN,
+  THIRD_CYCLE_TIME,
+} from '../../commons/constants/game-time.constant'
+import { FIRST_CYCLE_SCORE, FOURTH_CYCLE_SCORE, SECOND_CYCLE_SCORE, THIRD_CYCLE_SCORE } from './constants/score.constant'
 import { MAX_PLAYERS_PER_ROOM_LIMIT, MAX_ROUNDS_PER_GAME_LIMIT } from '../../commons/constants/common.constant'
 import { MultiplayerRoomCreateProps } from './types/multiplayer-room-props.type'
 import Word from './states/word.state'
@@ -171,22 +178,21 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
     this.state.winner = null // Reset the winner state
     this.state.round += 1 // Goto the next round
     this.state.word = this.state.words[this.state.round - 1] // Choose the word to be played from the words list
-    this.state.score.forEach((_, key) => {
-      this.state.score.set(key, 0)
-    })
     this.setMetadata({
       ...this.metadata,
       currentRound: this.metadata.currentRound + 1,
     })
-    Object.keys(this.state.score).forEach((key) => {
+
+    this.state.score.forEach((_, key) => {
       this.state.score.set(key, 0)
     })
+
     this.gameTimeInterval = this.clock.setInterval(() => {
       this.state.time -= 1
 
       if (this.state.time <= 0) {
         this.state.time = SECOND_CYCLE_TIME
-        this.state.word.cues[3].shown = true
+        this.state.word.cues[2].shown = true
         this.gameTimeInterval.clear()
         this.secondCycle()
       }
@@ -203,7 +209,7 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
 
       if (this.state.time <= 0) {
         this.state.time = THIRD_CYCLE_TIME
-        this.state.word.cues[4].shown = true
+        this.state.word.cues[3].shown = true
         this.gameTimeInterval.clear()
         this.thirdCycle()
       }
@@ -217,6 +223,25 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
    */
   thirdCycle() {
     this.state.cycle = 3
+    this.gameTimeInterval = this.clock.setInterval(async () => {
+      this.state.time -= 1
+
+      if (this.state.time <= 0) {
+        this.state.time = FOURTH_CYCLE_TIME
+        this.state.word.cues[4].shown = true
+        this.gameTimeInterval.clear()
+        this.fourthCycle()
+      }
+    }, 1000)
+  }
+
+  /**
+   * Run the fourth cycle of the current game round.
+   * Plus decides whether to end the round or the whole game based on
+   * remaining words
+   */
+  fourthCycle() {
+    this.state.cycle = 4
     this.gameTimeInterval = this.clock.setInterval(async () => {
       this.state.time -= 1
 
@@ -393,6 +418,8 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
         return SECOND_CYCLE_SCORE
       case 3:
         return THIRD_CYCLE_SCORE
+      case 4:
+        return FOURTH_CYCLE_SCORE
       default:
         return 0
     }
