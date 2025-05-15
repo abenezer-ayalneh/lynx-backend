@@ -3,7 +3,7 @@ import Word from './word.state'
 import { RoomProps } from '../types/solo-room-props.type'
 import Score from './score.state'
 
-export default class RoomState extends Schema {
+export default class SoloRoomState extends Schema {
   @type('boolean') guessing: boolean
 
   @type('number') round: number

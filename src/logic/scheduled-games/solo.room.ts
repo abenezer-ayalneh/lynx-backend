@@ -1,7 +1,7 @@
 import { Client, Delayed, Room } from 'colyseus'
 import { Injectable, Logger } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
-import RoomState from './states/room.state'
+import SoloRoomState from './states/solo-room.state'
 import {
   FIRST_CYCLE_TIME,
   FOURTH_CYCLE_TIME,
@@ -18,7 +18,7 @@ import { FIRST_CYCLE_SCORE, FOURTH_CYCLE_SCORE, SECOND_CYCLE_SCORE, THIRD_CYCLE_
 import Score from './states/score.state'
 
 @Injectable()
-export default class SoloRoom extends Room<RoomState> {
+export default class SoloRoom extends Room<SoloRoomState> {
   logger: Logger
 
   // For the game preparation visual(s) to be shown
@@ -68,14 +68,7 @@ export default class SoloRoom extends Room<RoomState> {
     // Start game preparation countdown
     this.createCountdown(START_COUNTDOWN)
 
-    this.onMessage(GUESS, async (client, message: { guess: string }) => {
-      const winner = await this.checkForWinner(message.guess)
-      if (winner) {
-        await this.handleGameWon(client.sessionId)
-      } else {
-        client.send(WRONG_GUESS, { guess: false })
-      }
-    })
+    this.registerMessages()
   }
 
   /**
@@ -120,7 +113,7 @@ export default class SoloRoom extends Room<RoomState> {
     // const randomWord = await this.pickRandomWord()
 
     // Create a RoomState object
-    const roomState = new RoomState({
+    const roomState = new SoloRoomState({
       word: undefined,
       guessing: false,
       round: 0,
@@ -291,19 +284,20 @@ export default class SoloRoom extends Room<RoomState> {
     })
   }
 
-  // private async checkForWinnerWord(word: string) {}
+  /**
+   * Subscribe to necessary websocket messages
+   * @private
+   */
+  private registerMessages() {
+    this.onMessage('exit', (client) => client.leave())
 
-  // (optional) Validate client auth token before joining/creating the room
-  // static async onAuth(token: string, request: IncomingMessage) {}
-  //
-  //
-  // // When a client leaves the room
-  // onLeave(client: Client, consented: boolean) {
-  //   this.delayedInterval.clear()
-  // }
-  //
-  // // Cleanup callback, called after there are no more clients in the room. (see `autoDispose`)
-  // onDispose() {
-  //   this.delayedInterval.clear()
-  // }
+    this.onMessage(GUESS, async (client, message: { guess: string }) => {
+      const winner = await this.checkForWinner(message.guess)
+      if (winner) {
+        await this.handleGameWon(client.sessionId)
+      } else {
+        client.send(WRONG_GUESS, { guess: false })
+      }
+    })
+  }
 }
