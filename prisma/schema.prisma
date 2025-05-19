@@ -59,6 +59,7 @@ model Player {
   email      String    @unique()
   password   String
   status     Boolean   @default(true)
+  role       Role      @default(PLAYER)
   score      Int       @default(0)
   created_at DateTime  @default(now())
   updated_at DateTime? @updatedAt()
@@ -106,4 +107,9 @@ enum ScheduledGameReminder {
 enum ScheduledGameType {
   INSTANT
   FUTURE
+}
+
+enum Role {
+  ADMIN
+  PLAYER
 }

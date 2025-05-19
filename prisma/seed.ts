@@ -54,9 +54,8 @@ async function main() {
   const players = [
     {
       name: 'John Doe',
-      email: 'john.doe@gmail.com',
-      password:
-        '$argon2id$v=19$m=65536,t=3,p=4$7OnlZ9aczsCtQmYPI0yi4w$BAMyy+V1yQEAPCXCbmpLYIv9Ny+4H9Y0AnJVj4mw8wA',
+      email: 'john.doe@lynx.com',
+      password: '$argon2id$v=19$m=65536,t=3,p=4$7OnlZ9aczsCtQmYPI0yi4w$BAMyy+V1yQEAPCXCbmpLYIv9Ny+4H9Y0AnJVj4mw8wA',
     },
   ]
   await prisma.player.createMany({ data: players })

@@ -122,6 +122,7 @@ export default class AuthenticationService {
         name: true,
         status: true,
         score: true,
+        role: true,
       },
     })
   }

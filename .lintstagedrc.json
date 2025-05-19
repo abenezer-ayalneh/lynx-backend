@@ -1,6 +1,3 @@
 {
-  "src/**/*.{ts,js}": [
-    "yarn run format",
-    "yarn run lint"
-  ]
+  "src/**/*.{ts,js}": ["prettier --write", "eslint --fix"]
 }
