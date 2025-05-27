@@ -1,4 +1,5 @@
 import { MapSchema, Schema, type } from '@colyseus/schema'
+
 import { LobbyRoomProps } from '../types/lobby-room-props.type'
 
 export default class LobbyRoomState extends Schema {

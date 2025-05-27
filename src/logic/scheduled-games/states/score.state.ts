@@ -1,4 +1,5 @@
 import { Schema, type } from '@colyseus/schema'
+
 import { Score as ScoreType } from '../types/winner.type'
 
 export default class Score extends Schema {

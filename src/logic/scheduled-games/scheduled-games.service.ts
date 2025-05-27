@@ -1,18 +1,18 @@
+import { tz } from '@date-fns/tz/tz'
 import { Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
-import { addMinutes, constructNow, format, parseISO } from 'date-fns'
-import { matchMaker } from 'colyseus'
-
-import { ScheduledGame, ScheduledGameReminder, ScheduledGameStatus, ScheduledGameType } from '@prisma/client'
 import { Cron } from '@nestjs/schedule'
-import { tz } from '@date-fns/tz/tz'
-import CreateMultiplayerRoomDto from './dto/create-multiplayer-room.dto'
-import PrismaService from '../../prisma/prisma.service'
-import MailService from '../../mail/mail.service'
-import RsvpDto from './dto/rsvp.dto'
+import { ScheduledGame, ScheduledGameReminder, ScheduledGameStatus, ScheduledGameType } from '@prisma/client'
+import { matchMaker } from 'colyseus'
+import { addMinutes, constructNow, format, parseISO } from 'date-fns'
+
 import { SCHEDULED_GAME_REMINDER_MINUTES } from '../../commons/constants/email.constant'
 import { ActivePlayerData } from '../../iam/types/active-player-data.type'
+import MailService from '../../mail/mail.service'
+import PrismaService from '../../prisma/prisma.service'
 import TIMEZONES from './constants/timezones.constants'
+import CreateMultiplayerRoomDto from './dto/create-multiplayer-room.dto'
+import RsvpDto from './dto/rsvp.dto'
 
 @Injectable()
 export default class ScheduledGamesService {
@@ -76,7 +76,10 @@ export default class ScheduledGamesService {
     })
 
     if (scheduledGames.length > 0) {
-      scheduledGames.forEach((game) => this.inviteToLobby(game))
+      for (let i = 0; i < scheduledGames.length; i++) {
+        const game = scheduledGames[i]
+        await this.inviteToLobby(game)
+      }
 
       // Update the game by setting the reminder value as SENT
       await this.prismaService.scheduledGame.updateMany({
@@ -221,7 +224,7 @@ export default class ScheduledGamesService {
     }
 
     if (gameReminderEmailPromises.length > 0) {
-      Promise.all(gameReminderEmailPromises)
+      await Promise.all(gameReminderEmailPromises)
     }
 
     return returnValue

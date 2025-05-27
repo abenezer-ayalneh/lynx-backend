@@ -1,7 +1,8 @@
 import { Body, Controller, Delete, Get, Param, Post } from '@nestjs/common'
+
+import ActiveUser from '../../iam/decorators/active-user.decorator'
 import CreateGameDto from './dto/create-game.dto'
 import GameService from './games.service'
-import ActiveUser from '../../iam/decorators/active-user.decorator'
 
 @Controller('games')
 export default class GameController {

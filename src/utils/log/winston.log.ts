@@ -1,6 +1,7 @@
-import { createLogger, format, LoggerOptions, transports } from 'winston'
-import { utilities as nestWinstonModuleUtilities } from 'nest-winston' // Custom log display format
 import 'winston-daily-rotate-file'
+
+import { utilities as nestWinstonModuleUtilities } from 'nest-winston' // Custom log display format
+import { createLogger, format, LoggerOptions, transports } from 'winston'
 
 // For development environment
 const loggerOptions: LoggerOptions = {

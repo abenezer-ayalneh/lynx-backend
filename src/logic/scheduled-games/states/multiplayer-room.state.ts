@@ -1,9 +1,10 @@
 import { ArraySchema, MapSchema, Schema, type } from '@colyseus/schema'
-import Player from './player.state'
-import Word from './word.state'
+
 import { MultiplayerRoomProps } from '../types/multiplayer-room-props.type'
-import Score from './score.state'
 import { Score as WinnerType } from '../types/winner.type'
+import Player from './player.state'
+import Score from './score.state'
+import Word from './word.state'
 
 export default class MultiplayerRoomState extends Schema {
   @type('number') gameId: number // The scheduled game's ID

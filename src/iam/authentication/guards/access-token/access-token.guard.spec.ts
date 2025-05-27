@@ -1,10 +1,11 @@
+import { ExecutionContext, UnauthorizedException } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
 import { Test, TestingModule } from '@nestjs/testing'
-import { ExecutionContext, UnauthorizedException } from '@nestjs/common'
 import { Player } from '@prisma/client'
+
 import jwtConfig from '../../../config/jwt.config'
-import AccessTokenGuard from './access-token.guard'
 import REQUEST_PLAYER_KEY from '../../../iam.constants'
+import AccessTokenGuard from './access-token.guard'
 
 describe('AccessTokenGuard', () => {
   let accessTokenGuard: AccessTokenGuard

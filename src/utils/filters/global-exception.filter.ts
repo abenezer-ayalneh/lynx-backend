@@ -1,6 +1,7 @@
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, HttpStatus, Logger } from '@nestjs/common'
-import { Response } from 'express'
 import { PrismaClientKnownRequestError, PrismaClientValidationError } from '@prisma/client/runtime/library'
+import { Response } from 'express'
+
 import ValidationException from '../exceptions/validation.exception'
 import FilterResponseInterface from './interfaces/filter-response.interface'
 

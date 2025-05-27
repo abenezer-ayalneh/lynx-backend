@@ -1,7 +1,7 @@
-import { Client, Delayed, Room } from 'colyseus'
 import { Injectable, Logger } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
-import SoloRoomState from './states/solo-room.state'
+import { Client, Delayed, Room } from 'colyseus'
+
 import {
   FIRST_CYCLE_TIME,
   FOURTH_CYCLE_TIME,
@@ -11,11 +11,12 @@ import {
   THIRD_CYCLE_TIME,
 } from '../../commons/constants/game-time.constant'
 import PrismaService from '../../prisma/prisma.service'
-import Word from './states/word.state'
-import { RoomCreateProps } from './types/solo-room-props.type'
 import { GUESS, WRONG_GUESS } from './constants/message.constant'
 import { FIRST_CYCLE_SCORE, FOURTH_CYCLE_SCORE, SECOND_CYCLE_SCORE, THIRD_CYCLE_SCORE } from './constants/score.constant'
 import Score from './states/score.state'
+import SoloRoomState from './states/solo-room.state'
+import Word from './states/word.state'
+import { RoomCreateProps } from './types/solo-room-props.type'
 
 @Injectable()
 export default class SoloRoom extends Room<SoloRoomState> {
@@ -42,15 +43,11 @@ export default class SoloRoom extends Room<SoloRoomState> {
     }
 
     const jwtService = new JwtService()
-    try {
-      return await jwtService.verifyAsync(token, {
-        secret: process.env.JWT_SECRET,
-        audience: process.env.JWT_TOKEN_AUDIENCE,
-        issuer: process.env.JWT_TOKEN_ISSUER,
-      })
-    } catch (e) {
-      return false
-    }
+    return await jwtService.verifyAsync<object>(token, {
+      secret: process.env.JWT_SECRET,
+      audience: process.env.JWT_TOKEN_AUDIENCE,
+      issuer: process.env.JWT_TOKEN_ISSUER,
+    })
   }
 
   /**
@@ -74,7 +71,7 @@ export default class SoloRoom extends Room<SoloRoomState> {
   /**
    * Handle all the necessary steps when a player wins a round
    */
-  async handleGameWon(sessionId: string) {
+  handleGameWon(sessionId: string) {
     let playerScore: number
     switch (this.state.cycle) {
       case 1:
@@ -100,7 +97,7 @@ export default class SoloRoom extends Room<SoloRoomState> {
       name: 'Player Name',
       score: playerScore,
     })
-    await this.stopCurrentRoundOrGame()
+    this.stopCurrentRoundOrGame()
   }
 
   async createSoloGameState(data: RoomCreateProps) {
@@ -197,7 +194,7 @@ export default class SoloRoom extends Room<SoloRoomState> {
    */
   thirdCycle() {
     this.state.cycle = 3
-    this.gameTimeInterval = this.clock.setInterval(async () => {
+    this.gameTimeInterval = this.clock.setInterval(() => {
       this.state.time -= 1
 
       if (this.state.time <= 0) {
@@ -216,18 +213,18 @@ export default class SoloRoom extends Room<SoloRoomState> {
    */
   fourthCycle() {
     this.state.cycle = 4
-    this.gameTimeInterval = this.clock.setInterval(async () => {
+    this.gameTimeInterval = this.clock.setInterval(() => {
       this.state.time -= 1
 
       if (this.state.time <= 0) {
-        await this.stopCurrentRoundOrGame()
+        this.stopCurrentRoundOrGame()
         this.gameTimeInterval.clear()
       }
     }, 1000)
   }
 
   // When client successfully join the room
-  async onJoin(client: Client, options: any, auth: any) {
+  async onJoin(client: Client, options: any, auth: { sub: number }) {
     const player = await this.prismaService.player.findUnique({
       where: { id: auth.sub },
     })
@@ -242,7 +239,7 @@ export default class SoloRoom extends Room<SoloRoomState> {
    * @param guess
    * @private
    */
-  private async checkForWinner(guess: string) {
+  private checkForWinner(guess: string) {
     // Get the currently being played word
     const wordBeingGuessed = this.state.word
 
@@ -254,7 +251,7 @@ export default class SoloRoom extends Room<SoloRoomState> {
     return false
   }
 
-  private async stopCurrentRoundOrGame() {
+  private stopCurrentRoundOrGame() {
     this.state.gameState = 'ROUND_END'
     this.state.waitingCountdownTime = MID_GAME_COUNTDOWN
     this.gameTimeInterval.clear()
@@ -263,7 +260,7 @@ export default class SoloRoom extends Room<SoloRoomState> {
     if (this.state.words.length > this.state.round) {
       this.createCountdown(MID_GAME_COUNTDOWN)
     } else {
-      this.waitingCountdownInterval = this.clock.setInterval(() => {
+      this.waitingCountdownInterval = this.clock.setInterval(async () => {
         this.state.waitingCountdownTime -= 1
 
         if (this.state.waitingCountdownTime <= 0) {
@@ -271,7 +268,7 @@ export default class SoloRoom extends Room<SoloRoomState> {
           this.state.time = 0
           this.state.word = undefined
           this.waitingCountdownInterval.clear()
-          this.setPlayerScoreOnDatabase(this.state.totalScore)
+          await this.setPlayerScoreOnDatabase(this.state.totalScore)
         }
       }, 1000)
     }
@@ -291,10 +288,10 @@ export default class SoloRoom extends Room<SoloRoomState> {
   private registerMessages() {
     this.onMessage('exit', (client) => client.leave())
 
-    this.onMessage(GUESS, async (client, message: { guess: string }) => {
-      const winner = await this.checkForWinner(message.guess)
+    this.onMessage(GUESS, (client, message: { guess: string }) => {
+      const winner = this.checkForWinner(message.guess)
       if (winner) {
-        await this.handleGameWon(client.sessionId)
+        this.handleGameWon(client.sessionId)
       } else {
         client.send(WRONG_GUESS, { guess: false })
       }

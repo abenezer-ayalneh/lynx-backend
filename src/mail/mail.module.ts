@@ -1,13 +1,14 @@
-import { Module } from '@nestjs/common'
-import { join } from 'path'
-import { MailerModule } from '@nestjs-modules/mailer'
-import { ConfigService } from '@nestjs/config'
-import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handlebars.adapter'
 import { BullModule } from '@nestjs/bull'
+import { Module } from '@nestjs/common'
+import { ConfigService } from '@nestjs/config'
+import { MailerModule } from '@nestjs-modules/mailer'
+import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handlebars.adapter'
+import { join } from 'path'
+
+import { MAIL_QUEUE_NAME } from '../commons/constants/email.constant'
 import MailController from './mail.controller'
 import MailService from './mail.service'
 import MailConsumer from './queue/mail.consumer'
-import { MAIL_QUEUE_NAME } from '../commons/constants/email.constant'
 
 @Module({
   imports: [
@@ -22,7 +23,7 @@ import { MAIL_QUEUE_NAME } from '../commons/constants/email.constant'
     }),
     MailerModule.forRootAsync({
       inject: [ConfigService],
-      useFactory: async (config: ConfigService) => ({
+      useFactory: (config: ConfigService) => ({
         transport: {
           host: config.get('MAIL_HOST'),
           port: config.get('MAIL_PORT'),

@@ -1,11 +1,12 @@
 import { Body, Controller, Get, Post, Query } from '@nestjs/common'
-import ScheduledGamesService from './scheduled-games.service'
-import CreateMultiplayerRoomDto from './dto/create-multiplayer-room.dto'
-import ActiveUser from '../../iam/decorators/active-user.decorator'
-import RsvpDto from './dto/rsvp.dto'
+
 import { Auth } from '../../iam/authentication/decorators/auth.decorator'
 import AuthType from '../../iam/authentication/enums/auth-type.enum'
+import ActiveUser from '../../iam/decorators/active-user.decorator'
 import { ActivePlayerData } from '../../iam/types/active-player-data.type'
+import CreateMultiplayerRoomDto from './dto/create-multiplayer-room.dto'
+import RsvpDto from './dto/rsvp.dto'
+import ScheduledGamesService from './scheduled-games.service'
 
 @Controller('scheduled-games')
 export default class ScheduledGamesController {

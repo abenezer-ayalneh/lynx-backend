@@ -1,9 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common'
-import CreateWordDto from './dto/create-word.dto'
-import UpdateWordDto from './dto/update-word.dto'
+
 import PrismaService from '../../prisma/prisma.service'
-import FindAllWordsDto from './dto/find-all-words.dto'
 import WORDS_PER_INFINITY_LOAD from './constants/words.constants'
+import CreateWordDto from './dto/create-word.dto'
+import FindAllWordsDto from './dto/find-all-words.dto'
+import UpdateWordDto from './dto/update-word.dto'
 
 @Injectable()
 export default class WordsService {

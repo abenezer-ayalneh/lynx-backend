@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing'
+
 import ScheduledGamesService from './scheduled-games.service'
 
 describe('ScheduledGamesService', () => {

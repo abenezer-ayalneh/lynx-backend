@@ -1,8 +1,9 @@
-import { Client, matchMaker, Room } from 'colyseus'
 import { Injectable, Logger } from '@nestjs/common'
-import { LobbyRoomProps } from './types/lobby-room-props.type'
-import LobbyRoomState from './states/lobby-room.state'
+import { Client, matchMaker, Room } from 'colyseus'
+
 import GameService from '../games/games.service'
+import LobbyRoomState from './states/lobby-room.state'
+import { LobbyRoomProps } from './types/lobby-room-props.type'
 
 @Injectable()
 export default class LobbyRoom extends Room<LobbyRoomState> {
@@ -43,20 +44,24 @@ export default class LobbyRoom extends Room<LobbyRoomState> {
    * @private
    */
   private registerMessages() {
-    this.onMessage('startGame', (_, message) => {
-      this.gameService.create({ type: 'MULTIPLAYER', scheduledGameId: this.state.gameId }, Number(message.playerId)).then(() => {
-        matchMaker
-          .createRoom('multiplayer', {
-            gameId: this.state.gameId,
-            ownerId: this.state.ownerId,
-          })
-          .then(async (room) => {
-            this.broadcast('startGame', {
-              roomId: room.roomId,
+    this.onMessage('startGame', (_, message: { playerId: string }) => {
+      this.gameService
+        .create({ type: 'MULTIPLAYER', scheduledGameId: this.state.gameId }, Number(message.playerId))
+        .then(() => {
+          matchMaker
+            .createRoom('multiplayer', {
+              gameId: this.state.gameId,
+              ownerId: this.state.ownerId,
             })
-            await this.disconnect()
-          })
-      })
+            .then(async (room) => {
+              this.broadcast('startGame', {
+                roomId: room.roomId,
+              })
+              await this.disconnect()
+            })
+            .catch((error) => this.logger.error(error))
+        })
+        .catch((error) => this.logger.error(error))
     })
   }
 }

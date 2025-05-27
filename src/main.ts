@@ -1,34 +1,44 @@
-import { INestApplication, Logger, ValidationError, ValidationPipe } from '@nestjs/common'
-import { NestFactory } from '@nestjs/core'
-import { WinstonModule } from 'nest-winston'
-import { WebSocketTransport } from '@colyseus/ws-transport'
-import { Room, Server } from 'colyseus'
-import { ConfigService } from '@nestjs/config'
-import { playground } from '@colyseus/playground'
 import { monitor } from '@colyseus/monitor'
+import { playground } from '@colyseus/playground'
+import { WebSocketTransport } from '@colyseus/ws-transport'
+import { INestApplication, Logger, ValidationError, ValidationPipe } from '@nestjs/common'
+import { ConfigService } from '@nestjs/config'
+import { NestFactory } from '@nestjs/core'
+import { logger, Room, Server } from 'colyseus'
 import * as basicAuth from 'express-basic-auth'
+import { WinstonModule } from 'nest-winston'
+
 import AppModule from './app.module'
+import LobbyRoom from './logic/scheduled-games/lobby.room'
+import MultiplayerRoom from './logic/scheduled-games/multiplayer.room'
+import SoloRoom from './logic/scheduled-games/solo.room'
 import ValidationException from './utils/exceptions/validation.exception'
 import winstonLoggerInstance from './utils/log/winston.log'
-import SoloRoom from './logic/scheduled-games/solo.room'
-import MultiplayerRoom from './logic/scheduled-games/multiplayer.room'
-import LobbyRoom from './logic/scheduled-games/lobby.room'
 
-function injectDeps<T extends { new (...args: any[]): Room }>(app: INestApplication, target: T): T {
+// eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
+function injectDeps<T extends { new (...args: any[]): Room }>(app: INestApplication, target: T): { new (...args: any[]): {} & any; prototype: object } {
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const selfDeps = Reflect.getMetadata('self:paramtypes', target) || []
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const dependencies = Reflect.getMetadata('design:paramtypes', target) || []
 
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-call,@typescript-eslint/no-unsafe-member-access
   selfDeps.forEach((dep: any) => {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment,@typescript-eslint/no-unsafe-member-access
     dependencies[dep.index] = dep.param
   })
 
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const injectables =
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call,@typescript-eslint/no-unsafe-member-access
     dependencies.map((dependency: any) => {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-return,@typescript-eslint/no-unsafe-argument
       return app.get(dependency)
     }) || []
 
   return class extends target {
     constructor(...args: any[]) {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       super(...injectables, args)
     }
   }
@@ -63,7 +73,7 @@ async function bootstrap() {
 
   // Enable CORS from allowed origins listed in .env
   app.enableCors({
-    origin: configService.get('CORS_ALLOWED_ORIGINS') ? configService.get('CORS_ALLOWED_ORIGINS').split(',') : false,
+    origin: configService.get<string>('CORS_ALLOWED_ORIGINS') ? configService.get<string>('CORS_ALLOWED_ORIGINS').split(',') : false,
   })
 
   // Add an 'api' prefix to all controller routes
@@ -88,6 +98,7 @@ async function bootstrap() {
   // Colyseus setup
   const colyseusServer = new Server({
     transport: new WebSocketTransport({
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       server: app.getHttpServer(),
       maxPayload: 1024 * 1024, // 1MB Max Payload
     }),
@@ -107,7 +118,9 @@ async function bootstrap() {
   await app.init()
 
   // Initialize the colyseus server
-  await colyseusServer.listen(port).then(async () => logger.verbose(`Application running at: ${port}`))
+  await colyseusServer.listen(port).then(() => logger.verbose(`Application running at: ${port}`))
 }
 
 bootstrap()
+  .then(() => logger.info('Application is running'))
+  .catch((err) => logger.info(err, 'Application failed to start'))

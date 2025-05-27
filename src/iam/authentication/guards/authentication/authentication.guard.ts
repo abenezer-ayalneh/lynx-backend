@@ -1,8 +1,10 @@
 import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common'
 import { Reflector } from '@nestjs/core'
-import AccessTokenGuard from '../access-token/access-token.guard'
-import AuthType from '../../enums/auth-type.enum'
+import { Observable } from 'rxjs'
+
 import { AUTH_TYPE_KEY } from '../../decorators/auth.decorator'
+import AuthType from '../../enums/auth-type.enum'
+import AccessTokenGuard from '../access-token/access-token.guard'
 
 @Injectable()
 export default class AuthenticationGuard implements CanActivate {
@@ -24,26 +26,21 @@ export default class AuthenticationGuard implements CanActivate {
     ]
 
     const guards = authTypes.map((type: AuthType) => this.authGuardMap[type]).flat()
-    let error = new UnauthorizedException()
-    const canActivateArray = []
+    const canActivateArray: Promise<boolean | Observable<boolean>>[] = []
 
     guards.forEach((guard) => {
       canActivateArray.push(Promise.resolve(guard.canActivate(context)))
     })
 
-    try {
-      const data = await Promise.all(canActivateArray)
+    const data = await Promise.all(canActivateArray)
 
-      for (let i = 0; i < data.length; i += 1) {
-        const datum = data[i]
-        if (datum) {
-          return true
-        }
+    for (let i = 0; i < data.length; i += 1) {
+      const datum = data[i]
+      if (datum) {
+        return true
       }
-    } catch (err) {
-      error = err
     }
 
-    throw error
+    throw new UnauthorizedException()
   }
 }

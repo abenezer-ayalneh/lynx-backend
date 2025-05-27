@@ -1,5 +1,5 @@
-import { Inject, Injectable, OnApplicationShutdown } from '@nestjs/common'
 import { CACHE_MANAGER } from '@nestjs/cache-manager'
+import { Inject, Injectable, OnApplicationShutdown } from '@nestjs/common'
 import { Cache } from 'cache-manager'
 
 @Injectable()
@@ -7,7 +7,7 @@ export default class RefreshTokenIdsStorage implements OnApplicationShutdown {
   constructor(@Inject(CACHE_MANAGER) private cacheManager: Cache) {}
 
   onApplicationShutdown(): any {
-    return this.cacheManager.reset()
+    return this.cacheManager.clear()
   }
 
   private getKey(playerId: number): string {

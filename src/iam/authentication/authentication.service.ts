@@ -1,19 +1,21 @@
-import { ConflictException, Inject, Injectable, UnauthorizedException } from '@nestjs/common'
-import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library'
-import { JwtService } from '@nestjs/jwt'
-import { ConfigType } from '@nestjs/config'
 import { randomUUID } from 'node:crypto'
+
+import { ConflictException, Inject, Injectable, UnauthorizedException } from '@nestjs/common'
+import { ConfigType } from '@nestjs/config'
+import { JwtService } from '@nestjs/jwt'
 import { Player } from '@prisma/client'
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library'
+
 import PrismaService from '../../prisma/prisma.service'
-import HashingService from '../hashing/hashing.service'
-import SignUpDto from './dto/sign-up.dto/sign-up.dto'
-import SignInDto from './dto/sign-in.dto/sign-in.dto'
 import jwtConfig from '../config/jwt.config'
-import { ActivePlayerData } from '../types/active-player-data.type'
-import RefreshTokenDto from './dto/refresh-token.dto'
-import RefreshTokenIdsStorage from './refresh-token-ids.storage/refresh-token-ids.storage'
-import { RefreshTokenData } from '../types/refresh-token-data.type'
 import InvalidatedRefreshTokenError from '../errors/invalidated-refresh-token.error'
+import HashingService from '../hashing/hashing.service'
+import { ActivePlayerData } from '../types/active-player-data.type'
+import { RefreshTokenData } from '../types/refresh-token-data.type'
+import RefreshTokenDto from './dto/refresh-token.dto'
+import SignInDto from './dto/sign-in.dto/sign-in.dto'
+import SignUpDto from './dto/sign-up.dto/sign-up.dto'
+import RefreshTokenIdsStorage from './refresh-token-ids.storage/refresh-token-ids.storage'
 
 @Injectable()
 export default class AuthenticationService {

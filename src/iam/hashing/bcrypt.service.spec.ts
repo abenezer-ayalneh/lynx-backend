@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing'
-import { BcryptService } from './bcrypt.service'
+
+import BcryptService from './bcrypt.service'
 
 describe('BcryptService', () => {
   let service: BcryptService

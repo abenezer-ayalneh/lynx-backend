@@ -1,8 +1,9 @@
 import { Module } from '@nestjs/common'
-import ScheduledGamesService from './scheduled-games.service'
-import ScheduledGamesController from './scheduled-games.controller'
-import GameModule from '../games/games.module'
+
 import MailModule from '../../mail/mail.module'
+import GameModule from '../games/games.module'
+import ScheduledGamesController from './scheduled-games.controller'
+import ScheduledGamesService from './scheduled-games.service'
 
 @Module({
   imports: [GameModule, MailModule],

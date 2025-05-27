@@ -1,7 +1,8 @@
 import { Schema, type } from '@colyseus/schema'
-import Word from './word.state'
+
 import { RoomProps } from '../types/solo-room-props.type'
 import Score from './score.state'
+import Word from './word.state'
 
 export default class SoloRoomState extends Schema {
   @type('boolean') guessing: boolean

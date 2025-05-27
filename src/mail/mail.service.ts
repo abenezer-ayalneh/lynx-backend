@@ -1,8 +1,9 @@
-import { Injectable } from '@nestjs/common'
 import { InjectQueue } from '@nestjs/bull'
+import { Injectable } from '@nestjs/common'
 import { Queue } from 'bull'
-import SendMailDto from './dto/mail.dto'
+
 import { MAIL_QUEUE_NAME } from '../commons/constants/email.constant'
+import SendMailDto from './dto/mail.dto'
 
 @Injectable()
 export default class MailService {

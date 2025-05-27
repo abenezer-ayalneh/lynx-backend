@@ -1,6 +1,6 @@
+import { tz } from '@date-fns/tz/tz'
 import { registerDecorator, ValidationArguments, ValidationOptions } from 'class-validator'
 import { isFuture, parseISO } from 'date-fns'
-import { tz } from '@date-fns/tz/tz'
 
 /**
  * A custom validation decorator for checking if a given date is in the future.
@@ -27,11 +27,12 @@ const IsInTheFuture = (timezoneFieldName: string, validationOptions?: Validation
       async: false,
       validator: {
         validate(dateString: string, args: ValidationArguments) {
-          if (!args.object[args.constraints[0]]) {
+          const constraint = args.constraints[0] as string
+          if (!args.object[constraint]) {
             throw Error('Constraint name does not exist inside the dto')
           }
 
-          const timezone = args.object[args.constraints[0]]
+          const timezone = args.object[constraint] as string
           const startTimeIso = parseISO(dateString, {
             in: tz(timezone),
           })

@@ -1,8 +1,9 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@nestjs/common'
-import WordsService from './words.service'
+
 import CreateWordDto from './dto/create-word.dto'
-import UpdateWordDto from './dto/update-word.dto'
 import FindAllWordsDto from './dto/find-all-words.dto'
+import UpdateWordDto from './dto/update-word.dto'
+import WordsService from './words.service'
 
 @Controller('words')
 export default class WordsController {

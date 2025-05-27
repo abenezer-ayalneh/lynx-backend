@@ -1,5 +1,5 @@
-import Word from '../states/word.state'
 import Score from '../states/score.state'
+import Word from '../states/word.state'
 
 export type RoomProps = {
   word: Word

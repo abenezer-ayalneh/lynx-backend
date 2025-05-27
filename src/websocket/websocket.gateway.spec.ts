@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing'
-import { WebsocketGateway } from './websocket.gateway'
+
+import WebsocketGateway from './websocket.gateway'
 
 describe('WebsocketGateway', () => {
   let gateway: WebsocketGateway

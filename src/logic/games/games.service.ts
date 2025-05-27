@@ -1,7 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common'
 import PrismaService from 'src/prisma/prisma.service'
-import CreateGameDto from './dto/create-game.dto'
+
 import { MAX_ROUNDS_PER_GAME_LIMIT } from '../../commons/constants/common.constant'
+import CreateGameDto from './dto/create-game.dto'
 
 @Injectable()
 export default class GameService {
@@ -86,7 +87,7 @@ export default class GameService {
     // Generate unique random numbers
     while (numbers.size < uniqueNumbersQuantity) {
       const randomNumber = getRandomInt(1, total)
-      // eslint-disable-next-line no-await-in-loop
+
       const word = await this.prismaService.word.findUnique({
         where: { id: randomNumber },
       })

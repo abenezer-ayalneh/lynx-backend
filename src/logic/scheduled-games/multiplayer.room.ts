@@ -1,8 +1,7 @@
-import { Client, Delayed, logger, Room } from 'colyseus'
 import { Injectable, Logger } from '@nestjs/common'
-import PrismaService from '../../prisma/prisma.service'
-import MultiplayerRoomState from './states/multiplayer-room.state'
-import Player from './states/player.state'
+import { Client, Delayed, logger, Room } from 'colyseus'
+
+import { MAX_PLAYERS_PER_ROOM_LIMIT, MAX_ROUNDS_PER_GAME_LIMIT } from '../../commons/constants/common.constant'
 import {
   FIRST_CYCLE_TIME,
   FOURTH_CYCLE_TIME,
@@ -11,13 +10,15 @@ import {
   START_COUNTDOWN,
   THIRD_CYCLE_TIME,
 } from '../../commons/constants/game-time.constant'
-import { FIRST_CYCLE_SCORE, FOURTH_CYCLE_SCORE, SECOND_CYCLE_SCORE, THIRD_CYCLE_SCORE } from './constants/score.constant'
-import { MAX_PLAYERS_PER_ROOM_LIMIT, MAX_ROUNDS_PER_GAME_LIMIT } from '../../commons/constants/common.constant'
-import { MultiplayerRoomCreateProps } from './types/multiplayer-room-props.type'
-import Word from './states/word.state'
+import PrismaService from '../../prisma/prisma.service'
 import GameService from '../games/games.service'
 import { GUESS, WRONG_GUESS } from './constants/message.constant'
+import { FIRST_CYCLE_SCORE, FOURTH_CYCLE_SCORE, SECOND_CYCLE_SCORE, THIRD_CYCLE_SCORE } from './constants/score.constant'
+import MultiplayerRoomState from './states/multiplayer-room.state'
+import Player from './states/player.state'
 import Score from './states/score.state'
+import Word from './states/word.state'
+import { MultiplayerRoomCreateProps } from './types/multiplayer-room-props.type'
 
 @Injectable()
 export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
@@ -50,7 +51,7 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
       return false
     }
 
-    return { playerName }
+    return Promise.resolve({ playerName })
   }
 
   /**
@@ -78,14 +79,6 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
     // Set the maximum number of clients that can connect to the room
     this.maxClients = MAX_PLAYERS_PER_ROOM_LIMIT
 
-    // Set room metadata for when list of rooms is shown to the players
-    await this.setMetadata({
-      numberOfPlayers: 0,
-      totalRounds: MAX_ROUNDS_PER_GAME_LIMIT,
-      currentRound: 0,
-      numberOfMaxPlayers: MAX_PLAYERS_PER_ROOM_LIMIT,
-    })
-
     // Register(subscribe) to necessary messages/events
     this.registerMessages()
 
@@ -96,7 +89,7 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
   /**
    * Triggered when a player successfully joins the room
    */
-  async onJoin(client: Client, options: any, auth: { playerName: string }) {
+  onJoin(client: Client, options: any, auth: { playerName: string }) {
     // Start the session's score as 0
     this.state.score.set(client.sessionId, 0)
     this.state.totalScore.set(
@@ -119,12 +112,6 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
     // Add unique players into the room's 'players' state
     if (!this.state.players.some((joinedPlayer) => joinedPlayer.id === client.sessionId)) {
       this.state.players.push(new Player(client.sessionId, auth.playerName))
-
-      // Increment the number of players by one
-      await this.setMetadata({
-        ...this.metadata,
-        numberOfPlayers: this.metadata.numberOfPlayers + 1,
-      })
     }
 
     logger.info(`Player joined with sessionId: ${client.sessionId}`)
@@ -134,19 +121,13 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
    *  Triggered when a player leaves the room
    * @param client
    */
-  async onLeave(client: Client) {
+  onLeave(client: Client) {
     const indexToRemove = this.state.players.findIndex((player) => player.id === client.sessionId)
     if (indexToRemove >= 0) {
       this.state.score.delete(client.sessionId)
       this.state.totalScore.delete(client.sessionId)
       this.state.sessionScore.delete(client.sessionId)
-      this.state.players.deleteAt(indexToRemove)
-
-      // Decrement the number of players by one
-      await this.setMetadata({
-        ...this.metadata,
-        numberOfPlayers: this.metadata.numberOfPlayers - 1,
-      })
+      this.state.players.splice(indexToRemove, 1)
     }
   }
 
@@ -178,10 +159,6 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
     this.state.winner = null // Reset the winner state
     this.state.round += 1 // Goto the next round
     this.state.word = this.state.words[this.state.round - 1] // Choose the word to be played from the words list
-    this.setMetadata({
-      ...this.metadata,
-      currentRound: this.metadata.currentRound + 1,
-    })
 
     this.state.score.forEach((_, key) => {
       this.state.score.set(key, 0)
@@ -223,7 +200,7 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
    */
   thirdCycle() {
     this.state.cycle = 3
-    this.gameTimeInterval = this.clock.setInterval(async () => {
+    this.gameTimeInterval = this.clock.setInterval(() => {
       this.state.time -= 1
 
       if (this.state.time <= 0) {
@@ -242,11 +219,11 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
    */
   fourthCycle() {
     this.state.cycle = 4
-    this.gameTimeInterval = this.clock.setInterval(async () => {
+    this.gameTimeInterval = this.clock.setInterval(() => {
       this.state.time -= 1
 
       if (this.state.time <= 0) {
-        await this.stopCurrentRoundOrGame()
+        this.stopCurrentRoundOrGame()
         this.gameTimeInterval.clear()
       }
     }, 1000)
@@ -275,17 +252,13 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
       // Start game preparation countdown
       this.createCountdown(START_COUNTDOWN)
       this.state.gameStarted = true
-      await this.setMetadata({
-        ...this.metadata,
-        currentRound: 1,
-      })
     }
   }
 
   /**
    * Prepare and initiate game restart
    */
-  async restartGame() {
+  restartGame() {
     this.state.guessing = false
     this.state.round = 0
     this.state.time = START_COUNTDOWN
@@ -299,10 +272,10 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
     this.state.clearScore()
     this.state.clearTotalScore()
 
-    await this.gameService.create({ type: 'MULTIPLAYER', scheduledGameId: this.state.gameId }, this.state.ownerId)
-
-    // Start the game
-    await this.startGame()
+    this.gameService
+      .create({ type: 'MULTIPLAYER', scheduledGameId: this.state.gameId }, this.state.ownerId)
+      .then(() => this.startGame())
+      .catch((error) => this.logger.error(error))
   }
 
   /**
@@ -311,8 +284,8 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
    * @param message
    * @private
    */
-  async guess(client: Client, message: { guess: string }) {
-    const isWinner = await this.checkForWinner(message.guess)
+  guess(client: Client, message: { guess: string }) {
+    const isWinner = this.checkForWinner(message.guess)
 
     if (isWinner) {
       this.state.setWinner({
@@ -321,7 +294,7 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
         score: this.getPlayerScore(),
       })
       this.addScoreToWinner(client.sessionId)
-      await this.stopCurrentRoundOrGame()
+      this.stopCurrentRoundOrGame()
     } else {
       client.send(WRONG_GUESS, { guess: false })
     }
@@ -331,7 +304,7 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
    * To put the currently running round or game to halt based on some conditions
    * @private
    */
-  private async stopCurrentRoundOrGame() {
+  private stopCurrentRoundOrGame() {
     this.state.gameState = 'ROUND_END'
     this.state.waitingCountdownTime = MID_GAME_COUNTDOWN
     this.gameTimeInterval.clear()
@@ -358,7 +331,7 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
    * @param guess
    * @private
    */
-  private async checkForWinner(guess: string) {
+  private checkForWinner(guess: string) {
     // Get the currently being played word
     const wordBeingGuessed = this.state.word
 
@@ -382,8 +355,11 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
     this.onMessage(GUESS, (client, message: { guess: string }) => this.guess(client, message))
 
     this.onMessage('talk', (client, payload) => {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment,@typescript-eslint/no-unsafe-call,@typescript-eslint/no-unsafe-member-access
       let preparedAudioData = payload.split(';')
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
       preparedAudioData[0] = 'data:audio/ogg;'
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment,@typescript-eslint/no-unsafe-member-access
       preparedAudioData = preparedAudioData[0] + preparedAudioData[1]
 
       this.broadcast('listen', preparedAudioData, { except: client })

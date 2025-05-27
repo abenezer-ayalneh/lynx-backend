@@ -1,5 +1,6 @@
 import { ArraySchema, Schema, type } from '@colyseus/schema'
 import { Word as WordModel } from '@prisma/client'
+
 import CueWord from './cue-word.state'
 
 export default class Word extends Schema {
@@ -12,9 +13,13 @@ export default class Word extends Schema {
   constructor(word: WordModel) {
     super()
 
-    const cueWords = Object.keys(word)
-      .filter((key) => key.startsWith('cue_word_'))
-      .map((cue, index) => new CueWord(index + 1, word[cue], index < 2))
+    const cueWords = [
+      new CueWord(1, word.cue_word_1, true),
+      new CueWord(2, word.cue_word_2, true),
+      new CueWord(3, word.cue_word_3, false),
+      new CueWord(4, word.cue_word_4, false),
+      new CueWord(5, word.cue_word_5, false),
+    ]
 
     this.id = word.id
     this.key = word.key

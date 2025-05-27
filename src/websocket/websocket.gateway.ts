@@ -1,9 +1,10 @@
+import { Logger } from '@nestjs/common'
 import { OnGatewayConnection, OnGatewayInit, WebSocketGateway } from '@nestjs/websockets'
 import { Server, Socket } from 'socket.io'
 import { DefaultEventsMap } from 'socket.io/dist/typed-events'
-import { Logger } from '@nestjs/common'
+
+import { PlayerStatusType, SocketPlayerStatusType } from './types/socket.type'
 import WebsocketService from './websocket.service'
-import { SocketPlayerStatusType, PlayerStatusType } from './types/socket.type'
 
 @WebSocketGateway({
   cors: {
@@ -23,7 +24,7 @@ export default class WebsocketGateway implements OnGatewayInit, OnGatewayConnect
     this.websocketService.socket = server
   }
 
-  async handleConnection(client: Socket<DefaultEventsMap, DefaultEventsMap>) {
+  handleConnection(client: Socket<DefaultEventsMap, DefaultEventsMap>) {
     this.logger.verbose(`Connected Device: ${client.id}`)
     this.connectedPlayers[client.id] = {
       username: '',
@@ -32,7 +33,7 @@ export default class WebsocketGateway implements OnGatewayInit, OnGatewayConnect
       room: undefined,
     }
 
-    client.on('voice', (data) => {
+    client.on('voice', (data: string) => {
       const splitData = data.split(';')
       splitData[0] = 'data:audio/ogg;'
       const newData = splitData[0] + splitData[1]
@@ -52,16 +53,16 @@ export default class WebsocketGateway implements OnGatewayInit, OnGatewayConnect
     })
 
     // Update the client information by the newly sent data
-    client.on('player-information', (data: PlayerStatusType) => {
+    client.on('player-information', async (data: PlayerStatusType) => {
       this.logger.debug({ data })
       this.connectedPlayers[client.id] = data
-      client.join(data.room)
+      await client.join(data.room)
 
       this.websocketService.socket.to(data.room).emit('update-players', this.returnPlayersInTheRoom(data.room))
     })
 
-    client.on('leave-room', (room: string) => {
-      client.leave(room)
+    client.on('leave-room', async (room: string) => {
+      await client.leave(room)
       this.websocketService.socket.to(room).emit('remove-player', this.returnPlayersInARoomWithPlayerRemoved(client.id))
     })
 

@@ -1,6 +1,7 @@
 import { MapSchema } from '@colyseus/schema'
-import Word from '../states/word.state'
+
 import Score from '../states/score.state'
+import Word from '../states/word.state'
 
 export type MultiplayerRoomProps = {
   word: Word // The word row that is currently being played
