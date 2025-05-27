@@ -25,6 +25,7 @@
     "@colyseus/playground": "^0.15.12",
     "@colyseus/schema": "^2.0.32",
     "@colyseus/ws-transport": "^0.15.2",
+    "@css-inline/css-inline-linux-x64-gnu": "^0.14.3",
     "@date-fns/tz": "^1.2.0",
     "@nestjs-modules/mailer": "^2.0.2",
     "@nestjs/bull": "^10.2.1",

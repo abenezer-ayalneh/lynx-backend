@@ -92,13 +92,13 @@ export default class ScheduledGamesService {
     }
   }
 
-  @Cron('*/1 * * * *')
+  // @Cron('*/1 * * * *')
   private async activateGame() {
     const now = constructNow(new Date())
     await this.prismaService.scheduledGame.updateMany({
       where: {
         start_time: {
-          gte: now,
+          lte: now,
         },
         status: ScheduledGameStatus.PENDING,
       },
