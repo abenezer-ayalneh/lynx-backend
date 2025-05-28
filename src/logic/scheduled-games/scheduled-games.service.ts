@@ -2,7 +2,8 @@ import { tz } from '@date-fns/tz/tz'
 import { Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { Cron } from '@nestjs/schedule'
-import { ScheduledGame, ScheduledGameReminder, ScheduledGameStatus, ScheduledGameType } from '@prisma/client'
+import { ScheduledGame, ScheduledGameReminder, ScheduledGameType } from '@prisma/client'
+import { JsonArray } from '@prisma/client/runtime/library'
 import { matchMaker } from 'colyseus'
 import { addMinutes, constructNow, format, parseISO } from 'date-fns'
 
@@ -42,17 +43,17 @@ export default class ScheduledGamesService {
     const game = await this.findOne(Number(rsvpDto.gameId))
 
     if (game && game.invited_emails.includes(rsvpDto.email)) {
-      if (game.accepted_emails.includes(rsvpDto.email)) {
+      // Avoid adding entry if the email that is RSVP-ing has already RSVP-ed.
+      if (game.accepted_emails && (game.accepted_emails as JsonArray).some((emailObject) => emailObject['email'] === rsvpDto.email)) {
         return game
       }
+
       return this.prismaService.scheduledGame.update({
         where: {
           id: Number(rsvpDto.gameId),
         },
         data: {
-          accepted_emails: {
-            push: rsvpDto.email,
-          },
+          accepted_emails: [...((game.accepted_emails ?? []) as JsonArray), { email: rsvpDto.email, reminder: ScheduledGameReminder.PENDING }] as JsonArray,
         },
       })
     }
@@ -63,15 +64,16 @@ export default class ScheduledGamesService {
   @Cron('*/1 * * * *')
   private async invitationJob() {
     const now = constructNow(new Date())
-    // Get games that are within 10 minutes reach and has not sent invitation to the participants
+    // Get games that are within 10 minutes reach and has participants who has not received a reminder email.
     const scheduledGames = await this.prismaService.scheduledGame.findMany({
       where: {
         start_time: {
-          lte: addMinutes(now, SCHEDULED_GAME_REMINDER_MINUTES),
+          lte: addMinutes(now, SCHEDULED_GAME_REMINDER_MINUTES), // Check for games that will start within a specific minutes(e.g. 10 minutes)
         },
         type: ScheduledGameType.FUTURE,
-        accepted_emails: { isEmpty: false },
-        reminder: ScheduledGameReminder.PENDING,
+        accepted_emails: {
+          array_contains: [{ reminder: ScheduledGameReminder.PENDING }],
+        },
       },
     })
 
@@ -79,36 +81,21 @@ export default class ScheduledGamesService {
       for (let i = 0; i < scheduledGames.length; i++) {
         const game = scheduledGames[i]
         await this.inviteToLobby(game)
-      }
 
-      // Update the game by setting the reminder value as SENT
-      await this.prismaService.scheduledGame.updateMany({
-        where: {
-          id: {
-            in: scheduledGames.map((game) => game.id),
+        // Update the game by setting the reminder value as SENT
+        await this.prismaService.scheduledGame.update({
+          where: {
+            id: game.id,
           },
-        },
-        data: {
-          reminder: ScheduledGameReminder.SENT,
-        },
-      })
+          data: {
+            accepted_emails: (game.accepted_emails as JsonArray).map((emailObject) => ({
+              email: emailObject['email'] as string,
+              reminder: ScheduledGameReminder.SENT,
+            })),
+          },
+        })
+      }
     }
-  }
-
-  // @Cron('*/1 * * * *')
-  private async activateGame() {
-    const now = constructNow(new Date())
-    await this.prismaService.scheduledGame.updateMany({
-      where: {
-        start_time: {
-          lte: now,
-        },
-        status: ScheduledGameStatus.PENDING,
-      },
-      data: {
-        status: ScheduledGameStatus.ACTIVE,
-      },
-    })
   }
 
   private async handleFutureScheduledGame(activePlayerData: ActivePlayerData, createRoomDto: CreateMultiplayerRoomDto) {
@@ -199,7 +186,11 @@ export default class ScheduledGamesService {
       message: string
     }>[] = []
 
-    if (game.accepted_emails.length > 0) {
+    const emailsToInviteToLobby = (game.accepted_emails as JsonArray)
+      .filter((emailObject) => emailObject['reminder'] === ScheduledGameReminder.PENDING)
+      .map((emailObject) => emailObject['email'] as string)
+
+    if (emailsToInviteToLobby.length > 0) {
       const room = await matchMaker.createRoom('lobby', {
         gameId: game.id,
         startTime: game.start_time.toISOString(),
@@ -207,7 +198,7 @@ export default class ScheduledGamesService {
       })
 
       returnValue.lobbyId = room.roomId
-      game.accepted_emails.forEach((email) => {
+      emailsToInviteToLobby.forEach((email) => {
         gameReminderEmailPromises.push(
           this.mailService.sendMail({
             to: [email],

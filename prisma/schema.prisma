@@ -72,19 +72,18 @@ model Player {
 }
 
 model ScheduledGame {
-  id              Int                   @id @default(autoincrement())
+  id              Int                 @id @default(autoincrement())
   invitation_text String
   invited_emails  String[]
-  accepted_emails String[]
+  accepted_emails Json?
   type            ScheduledGameType
   start_time      DateTime
-  max_players     Int                   @default(8)
-  rounds          Int                   @default(5)
-  status          ScheduledGameStatus   @default(PENDING)
+  max_players     Int                 @default(8)
+  rounds          Int                 @default(5)
+  status          ScheduledGameStatus @default(PENDING)
   created_by      Int
-  reminder        ScheduledGameReminder @default(PENDING)
-  created_at      DateTime              @default(now())
-  updated_at      DateTime?             @updatedAt()
+  created_at      DateTime            @default(now())
+  updated_at      DateTime?           @updatedAt()
   deleted_at      DateTime?
 
   Owner Player @relation(fields: [created_by], references: [id])
