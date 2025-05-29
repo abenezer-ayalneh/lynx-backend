@@ -154,18 +154,13 @@ export default class ScheduledGamesService {
   }
 
   private async handleInstantScheduledGame(activePlayerData: ActivePlayerData, createRoomDto: CreateMultiplayerRoomDto) {
-    const emailsToSendInvitationTo = [
-      ...createRoomDto.emails,
-      // activePlayerData.email,
-    ]
-
     // Instant game invitation
     const startTimeIso = constructNow(new Date())
     const scheduledGame = await this.prismaService.scheduledGame.create({
       data: {
         invitation_text: createRoomDto.invitation_text,
-        invited_emails: emailsToSendInvitationTo,
-        accepted_emails: emailsToSendInvitationTo,
+        invited_emails: createRoomDto.emails,
+        accepted_emails: createRoomDto.emails.map((email) => ({ email, reminder: ScheduledGameReminder.PENDING })),
         start_time: startTimeIso.toISOString(),
         type: ScheduledGameType.INSTANT,
         Owner: {
