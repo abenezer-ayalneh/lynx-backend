@@ -9,6 +9,7 @@ import WordsModule from './admin/words/words.module'
 import AppController from './app.controller'
 import AppService from './app.service'
 import IamModule from './iam/iam.module'
+import { LiveKitModule } from './live-kit/live-kit.module'
 import LogicModule from './logic/logic.module'
 import MailModule from './mail/mail.module'
 import PrismaModule from './prisma/prisma.module'
@@ -34,13 +35,9 @@ import WebsocketModule from './websocket/websocket.module'
     LogicModule,
     MailModule,
     WordsModule,
+    LiveKitModule,
   ],
   controllers: [AppController],
-  providers: [
-    Logger,
-    AppService,
-    WebsocketGateway,
-    { provide: APP_FILTER, useClass: GlobalExceptionFilter }, // Register the global exception filter in the app level (i.e. globally)
-  ],
+  providers: [Logger, AppService, WebsocketGateway, { provide: APP_FILTER, useClass: GlobalExceptionFilter }],
 })
 export default class AppModule {}
