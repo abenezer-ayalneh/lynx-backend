@@ -1,9 +1,11 @@
 import { Controller, Get, Query } from '@nestjs/common'
 
+import { Auth } from '../iam/authentication/decorators/auth.decorator'
+import AuthType from '../iam/authentication/enums/auth-type.enum'
 import { GetTokenDto } from './dto/get-token.dto'
 import { LiveKitService } from './live-kit.service'
 
-// @Auth(AuthType.None)
+@Auth(AuthType.None)
 @Controller('live-kit')
 export class LiveKitController {
   constructor(private readonly liveKitService: LiveKitService) {}

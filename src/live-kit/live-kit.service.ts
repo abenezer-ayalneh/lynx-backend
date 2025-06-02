@@ -16,7 +16,7 @@ export class LiveKitService {
     // It's available as LocalParticipant.identity with live-kit-client SDK
     const participantName = `live-kit-player-${getTokenDto.sessionId}`
 
-    const at = new AccessToken(this.configService.get<string>('LIVE_KIT_API_KEY'), this.configService.get<string>('LIVE_KIT_API_SECRET'), {
+    const at = new AccessToken(this.configService.get<string>('LIVEKIT_API_KEY'), this.configService.get<string>('LIVEKIT_API_SECRET'), {
       identity: participantName,
       // Token to expire after 10 minutes
       ttl: '10m',
