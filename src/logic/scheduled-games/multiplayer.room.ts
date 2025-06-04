@@ -348,26 +348,19 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
    * @private
    */
   private registerMessages() {
-    this.onMessage('exit', (client) => client.leave())
-
     this.onMessage('start-new-game', () => this.restartGame())
 
+    this.onMessage('pause', () => this.pauseGame())
+
+    this.onMessage('resume', () => this.resumeGame())
+
     this.onMessage(GUESS, (client, message: { guess: string }) => this.guess(client, message))
-
-    this.onMessage('talk', (client, payload) => {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment,@typescript-eslint/no-unsafe-call,@typescript-eslint/no-unsafe-member-access
-      let preparedAudioData = payload.split(';')
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-      preparedAudioData[0] = 'data:audio/ogg;'
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment,@typescript-eslint/no-unsafe-member-access
-      preparedAudioData = preparedAudioData[0] + preparedAudioData[1]
-
-      this.broadcast('listen', preparedAudioData, { except: client })
-    })
 
     this.onMessage('game-restart-vote', (client, message: { vote: boolean }) => {
       this.state.voteForGameRestart(client.sessionId, message.vote)
     })
+
+    this.onMessage('exit', (client) => client.leave())
   }
 
   private addScoreToWinner(sessionId: string) {
@@ -399,5 +392,17 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
       default:
         return 0
     }
+  }
+
+  private pauseGame() {
+    this.waitingCountdownInterval.pause()
+    this.gameTimeInterval.pause()
+    this.state.gameStatus = 'PAUSED'
+  }
+
+  private resumeGame() {
+    this.waitingCountdownInterval.resume()
+    this.gameTimeInterval.resume()
+    this.state.gameStatus = 'ONGOING'
   }
 }

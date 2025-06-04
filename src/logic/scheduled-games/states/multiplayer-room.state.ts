@@ -28,7 +28,9 @@ export default class MultiplayerRoomState extends Schema {
   @type('number') waitingCountdownTime: number // Countdown timer for the waiting windows
 
   @type('string')
-  gameState: 'START_COUNTDOWN' | 'ROUND_END' | 'GAME_STARTED' | 'GAME_END' // The state the game is currently in
+  gameState: 'START_COUNTDOWN' | 'ROUND_END' | 'GAME_STARTED' | 'GAME_END'
+
+  @type('string') gameStatus: 'ONGOING' | 'PAUSED' // The state the game is currently in
 
   @type(Score) winner: Score | null // The winner
 
@@ -68,6 +70,7 @@ export default class MultiplayerRoomState extends Schema {
     this.waitingCountdownTime = waitingCountdownTime
     this.words = words
     this.gameState = gameState
+    this.gameStatus = 'ONGOING'
     this.winner = winner ?? null
     this.gameStarted = gameStarted
     this.gameId = gameId
