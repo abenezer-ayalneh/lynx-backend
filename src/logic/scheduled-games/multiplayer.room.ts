@@ -6,6 +6,8 @@ import {
   FIRST_CYCLE_TIME,
   FOURTH_CYCLE_TIME,
   MID_GAME_COUNTDOWN,
+  ROOM_AUTO_DISPOSE_TIMEOUT_SECONDS,
+  ROOM_RECONNECTION_TIMEOUT_SECONDS,
   SECOND_CYCLE_TIME,
   START_COUNTDOWN,
   THIRD_CYCLE_TIME,
@@ -120,14 +122,27 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
   /**
    *  Triggered when a player leaves the room
    * @param client
+   * @param consented
    */
-  onLeave(client: Client) {
-    const indexToRemove = this.state.players.findIndex((player) => player.id === client.sessionId)
-    if (indexToRemove >= 0) {
-      this.state.score.delete(client.sessionId)
-      this.state.totalScore.delete(client.sessionId)
-      this.state.sessionScore.delete(client.sessionId)
-      this.state.players.splice(indexToRemove, 1)
+  async onLeave(client: Client, consented: boolean) {
+    this.logger.debug(`Consented: ${consented}`)
+    try {
+      if (consented) {
+        throw new Error('Consented leave')
+      }
+
+      // allow the disconnected client to reconnect into this room until a give time in seconds
+      await this.allowReconnection(client, ROOM_RECONNECTION_TIMEOUT_SECONDS)
+    } catch (e) {
+      this.logger.error(e)
+      this.resetAutoDisposeTimeout(ROOM_AUTO_DISPOSE_TIMEOUT_SECONDS)
+      const indexToRemove = this.state.players.findIndex((player) => player.id === client.sessionId)
+      if (indexToRemove >= 0) {
+        this.state.score.delete(client.sessionId)
+        this.state.totalScore.delete(client.sessionId)
+        this.state.sessionScore.delete(client.sessionId)
+        this.state.players.splice(indexToRemove, 1)
+      }
     }
   }
 
@@ -359,8 +374,6 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
     this.onMessage('game-restart-vote', (client, message: { vote: boolean }) => {
       this.state.voteForGameRestart(client.sessionId, message.vote)
     })
-
-    this.onMessage('exit', (client) => client.leave())
   }
 
   private addScoreToWinner(sessionId: string) {
