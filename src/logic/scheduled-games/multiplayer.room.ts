@@ -350,7 +350,7 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
     // Get the currently being played word
     const wordBeingGuessed = this.state.word
 
-    if (this.state.winner === null && wordBeingGuessed) {
+    if (this.state.gameState === 'GAME_STARTED' && this.state.winner === null && wordBeingGuessed) {
       // Cast to lowercase for case-insensitive comparison
       return wordBeingGuessed.key.toLowerCase() === guess.toLowerCase()
     }
