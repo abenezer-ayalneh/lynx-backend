@@ -9,6 +9,8 @@ import { LobbyRoomProps } from './types/lobby-room-props.type'
 export default class LobbyRoom extends Room<LobbyRoomState> {
   logger: Logger
 
+  disposeTimeout: ReturnType<typeof setTimeout>
+
   constructor(private readonly gameService: GameService) {
     super()
     this.logger = new Logger('LobbyRoom')
@@ -29,6 +31,9 @@ export default class LobbyRoom extends Room<LobbyRoomState> {
    */
   onJoin(client: Client, options: { player: { name: string } }) {
     this.state.playerNames.set(client.sessionId, options.player.name)
+    if (this.disposeTimeout) {
+      clearTimeout(this.disposeTimeout)
+    }
   }
 
   /**
@@ -37,6 +42,16 @@ export default class LobbyRoom extends Room<LobbyRoomState> {
    */
   onLeave(client: Client) {
     this.state.playerNames.delete(client.sessionId)
+    if (this.state.playerNames.size === 0) {
+      this.disposeTimeout = setTimeout(
+        () => {
+          this.disconnect()
+            .then(() => clearTimeout(this.disposeTimeout))
+            .catch((error) => this.logger.error(error))
+        },
+        10 * 60 * 1000,
+      )
+    }
   }
 
   /**
