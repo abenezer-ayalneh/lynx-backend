@@ -175,7 +175,7 @@ export default class ScheduledGamesService {
   }
 
   private async inviteToLobby(game: ScheduledGame) {
-    const returnValue = { lobbyId: null }
+    const returnValue = { lobbyId: null, gameId: null }
     const gameReminderEmailPromises: Promise<{
       code: string
       message: string
@@ -193,6 +193,7 @@ export default class ScheduledGamesService {
       })
 
       returnValue.lobbyId = room.roomId
+      returnValue.gameId = game.id
       emailsToInviteToLobby.forEach((email) => {
         gameReminderEmailPromises.push(
           this.mailService.sendMail({
@@ -202,7 +203,7 @@ export default class ScheduledGamesService {
             template: './game-reminder',
             context: {
               reminderMinutes: SCHEDULED_GAME_REMINDER_MINUTES,
-              link: `${this.configService.get<string>('FRONTEND_APP_URL')}/scheduled-game/lobby?id=${room.roomId}`,
+              link: `${this.configService.get<string>('FRONTEND_APP_URL')}/scheduled-game/${game.id}/lobby?id=${room.roomId}`,
             },
           }),
         )

@@ -1,3 +1,5 @@
+import * as crypto from 'node:crypto'
+
 import { Injectable } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { AccessToken } from 'livekit-server-sdk'
@@ -11,10 +13,10 @@ export class LiveKitService {
   async getToken(getTokenDto: GetTokenDto) {
     // If this room doesn't exist, it'll be automatically created when the first
     // participant joins
-    const roomName = `live-kit-room-${getTokenDto.colyseusRoomId}`
+    const roomName = `lynx-voice-room-${getTokenDto.gameId}`
     // Identifier to be used for participant.
     // It's available as LocalParticipant.identity with live-kit-client SDK
-    const participantName = `live-kit-player-${getTokenDto.sessionId}`
+    const participantName = `lynx-voice-player-${crypto.randomUUID()}`
 
     const at = new AccessToken(this.configService.get<string>('LIVEKIT_API_KEY'), this.configService.get<string>('LIVEKIT_API_SECRET'), {
       identity: participantName,
