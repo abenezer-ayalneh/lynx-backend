@@ -1,7 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common'
 import { Client, Delayed, logger, Room } from 'colyseus'
 
-import { MAX_PLAYERS_PER_ROOM_LIMIT, MAX_ROUNDS_PER_GAME_LIMIT } from '../../commons/constants/common.constant'
 import {
   FIRST_CYCLE_TIME,
   FOURTH_CYCLE_TIME,
@@ -12,15 +11,16 @@ import {
   START_COUNTDOWN,
   THIRD_CYCLE_TIME,
 } from '../../commons/constants/game-time.constant'
-import PrismaService from '../../prisma/prisma.service'
 import GameService from '../games/games.service'
-import { GUESS, WRONG_GUESS } from './constants/message.constant'
+import { GAME_RESTART_VOTE, GUESS, PAUSE, RESUME, START_GAME, START_NEW_GAME, WRONG_GUESS } from './constants/message.constant'
 import { FIRST_CYCLE_SCORE, FOURTH_CYCLE_SCORE, SECOND_CYCLE_SCORE, THIRD_CYCLE_SCORE } from './constants/score.constant'
+import { GamePlayStatus, GameState } from './enums/multiplayer-room.enum'
+import ScheduledGamesService from './scheduled-games.service'
 import MultiplayerRoomState from './states/multiplayer-room.state'
 import Player from './states/player.state'
 import Score from './states/score.state'
 import Word from './states/word.state'
-import { MultiplayerRoomCreateProps } from './types/multiplayer-room-props.type'
+import { MultiplayerRoomJoinDto } from './types/multiplayer-room-props.type'
 
 @Injectable()
 export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
@@ -37,15 +37,15 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
   public gameTimeInterval: Delayed
 
   constructor(
-    private readonly prismaService: PrismaService,
     private readonly gameService: GameService,
+    private readonly scheduledGameService: ScheduledGamesService,
   ) {
     super()
     this.logger = new Logger('MultiplayerRoom')
   }
 
   /**
-   * Validate client name before joining/creating the room
+   * Validate the client name before joining/creating the room
    * @param playerName
    */
   static async onAuth(playerName: string) {
@@ -59,39 +59,45 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
   /**
    * Initiate a room and subscribe to the guess message type
    */
-  async onCreate(data?: MultiplayerRoomCreateProps) {
-    // Create a multiplayer room state and set it as the room's state
-    const roomState = new MultiplayerRoomState({
-      word: undefined,
-      guessing: false,
-      round: 0,
-      totalRound: MAX_ROUNDS_PER_GAME_LIMIT,
-      time: FIRST_CYCLE_TIME,
-      cycle: 1,
-      waitingCountdownTime: START_COUNTDOWN,
-      words: [], // TODO get this from the DB
-      gameState: 'START_COUNTDOWN',
-      winner: null,
-      gameStarted: false,
-      gameId: data.gameId,
-      ownerId: data.ownerId,
-    })
-    this.setState(roomState)
+  async onCreate(multiplayerRoomCreateProps: MultiplayerRoomJoinDto) {
+    const game = await this.scheduledGameService.findOne(Number(multiplayerRoomCreateProps.gameId))
+    this.logger.debug(game)
 
-    // Set the maximum number of clients that can connect to the room
-    this.maxClients = MAX_PLAYERS_PER_ROOM_LIMIT
+    // Initiate the game room's state
+    const multiplayerRoomState = new MultiplayerRoomState({
+      gameId: game.id,
+      ownerId: game.created_by,
+      startTime: game.start_time.toISOString(),
+    })
+    this.setState(multiplayerRoomState)
 
     // Register(subscribe) to necessary messages/events
     this.registerMessages()
+  }
+
+  /**
+   * Initiate a room and subscribe to the guess message type
+   */
+  startMultiplayerGame() {
+    // Configure initial states to start playing the multiplayer game
+
+    this.state.time = FIRST_CYCLE_TIME
+    this.state.cycle = 1
+    this.state.waitingCountdownTime = START_COUNTDOWN
+    this.state.words = []
+    this.state.gameState = GameState.START_COUNTDOWN
+    this.state.winner = null
 
     // Start the game
-    await this.startGame()
+    this.startGame()
+      .then(() => this.logger.debug('Multiplayer game started'))
+      .catch((error) => this.logger.error(error))
   }
 
   /**
    * Triggered when a player successfully joins the room
    */
-  onJoin(client: Client, options: any, auth: { playerName: string }) {
+  onJoin(client: Client, options: MultiplayerRoomJoinDto, auth: { playerName: string }) {
     // Start the session's score as 0
     this.state.score.set(client.sessionId, 0)
     this.state.totalScore.set(
@@ -157,7 +163,7 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
 
     this.clock.setTimeout(
       () => {
-        this.state.gameState = 'GAME_STARTED'
+        this.state.gameState = GameState.GAME_STARTED
         this.firstCycle()
         this.waitingCountdownInterval.clear()
       },
@@ -249,15 +255,9 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
    */
   async startGame() {
     // Fetch the associated game with the current game
-    const scheduledGame = await this.prismaService.scheduledGame.findUnique({
-      where: { id: this.state.gameId },
-    })
+    const scheduledGame = await this.scheduledGameService.findOne(this.state.gameId)
     if (scheduledGame) {
-      const game = await this.prismaService.game.findFirst({
-        where: { scheduled_game_id: scheduledGame.id },
-        orderBy: { created_at: 'desc' },
-        include: { Words: true },
-      })
+      const game = await this.gameService.findFirstByScheduledGameId(scheduledGame.id)
 
       // Set the words state variable
       if (game) {
@@ -266,7 +266,6 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
 
       // Start game preparation countdown
       this.createCountdown(START_COUNTDOWN)
-      this.state.gameStarted = true
     }
   }
 
@@ -274,15 +273,13 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
    * Prepare and initiate game restart
    */
   restartGame() {
-    this.state.guessing = false
     this.state.round = 0
     this.state.time = START_COUNTDOWN
     this.state.cycle = 1
     this.state.word = undefined
     this.state.winner = null
-    this.state.gameState = 'START_COUNTDOWN'
+    this.state.gameState = GameState.START_COUNTDOWN
     this.state.waitingCountdownTime = 3
-    this.state.gameStarted = false
     this.state.words = []
     this.state.clearScore()
     this.state.clearTotalScore()
@@ -320,7 +317,7 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
    * @private
    */
   private stopCurrentRoundOrGame() {
-    this.state.gameState = 'ROUND_END'
+    this.state.gameState = GameState.ROUND_END
     this.state.waitingCountdownTime = MID_GAME_COUNTDOWN
     this.gameTimeInterval.clear()
 
@@ -332,7 +329,7 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
         this.state.waitingCountdownTime -= 1
 
         if (this.state.waitingCountdownTime <= 0) {
-          this.state.gameState = 'GAME_END'
+          this.state.gameState = GameState.GAME_END
           this.state.time = 0
           this.state.word = undefined
           this.waitingCountdownInterval.clear()
@@ -350,7 +347,7 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
     // Get the currently being played word
     const wordBeingGuessed = this.state.word
 
-    if (this.state.gameState === 'GAME_STARTED' && this.state.winner === null && wordBeingGuessed) {
+    if (this.state.gameState === GameState.GAME_STARTED && this.state.winner === null && wordBeingGuessed) {
       // Cast to lowercase for case-insensitive comparison
       return wordBeingGuessed.key.toLowerCase() === guess.toLowerCase()
     }
@@ -363,15 +360,17 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
    * @private
    */
   private registerMessages() {
-    this.onMessage('start-new-game', () => this.restartGame())
+    this.onMessage(START_GAME, () => this.startMultiplayerGame())
 
-    this.onMessage('pause', () => this.pauseGame())
+    this.onMessage(PAUSE, () => this.pauseGame())
 
-    this.onMessage('resume', () => this.resumeGame())
+    this.onMessage(RESUME, () => this.resumeGame())
+
+    this.onMessage(START_NEW_GAME, () => this.restartGame())
 
     this.onMessage(GUESS, (client, message: { guess: string }) => this.guess(client, message))
 
-    this.onMessage('game-restart-vote', (client, message: { vote: boolean }) => {
+    this.onMessage(GAME_RESTART_VOTE, (client, message: { vote: boolean }) => {
       this.state.voteForGameRestart(client.sessionId, message.vote)
     })
   }
@@ -410,12 +409,12 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
   private pauseGame() {
     this.waitingCountdownInterval.pause()
     this.gameTimeInterval.pause()
-    this.state.gameStatus = 'PAUSED'
+    this.state.gamePlayStatus = GamePlayStatus.PAUSED
   }
 
   private resumeGame() {
     this.waitingCountdownInterval.resume()
     this.gameTimeInterval.resume()
-    this.state.gameStatus = 'ONGOING'
+    this.state.gamePlayStatus = GamePlayStatus.PLAYING
   }
 }

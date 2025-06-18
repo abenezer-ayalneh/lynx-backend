@@ -16,9 +16,9 @@ export default class GameService {
     // Choose random words(their IDs) from the total
     // const words = await this.getWords(lastWord.id, TOTAL_GAME_ROUNDS)
     const randomWordIds = await this.prismaService.$queryRawUnsafe<{ id: number }[]>(`SELECT id
-       FROM words
-       ORDER BY random()
-       LIMIT ${MAX_ROUNDS_PER_GAME_LIMIT}`)
+                                                                                      FROM words
+                                                                                      ORDER BY random()
+                                                                                      LIMIT ${MAX_ROUNDS_PER_GAME_LIMIT}`)
 
     // Create a game and connect it with chosen words
     return this.prismaService.game.create({
@@ -58,9 +58,18 @@ export default class GameService {
       where: { id, deleted_at: null },
       select: {
         id: true,
+        owner_id: true,
         type: true,
         created_at: true,
       },
+    })
+  }
+
+  findFirstByScheduledGameId(id: number) {
+    return this.prismaService.game.findFirst({
+      where: { scheduled_game_id: id },
+      orderBy: { created_at: 'desc' },
+      include: { Words: true },
     })
   }
 

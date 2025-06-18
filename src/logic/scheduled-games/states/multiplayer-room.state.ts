@@ -1,80 +1,64 @@
 import { ArraySchema, MapSchema, Schema, type } from '@colyseus/schema'
 
-import { MultiplayerRoomProps } from '../types/multiplayer-room-props.type'
+import { MAX_ROUNDS_PER_GAME_LIMIT } from '../../../commons/constants/common.constant'
+import { GamePlayStatus, GameState } from '../enums/multiplayer-room.enum'
+import { MultiplayerRoomCreationProps } from '../types/multiplayer-room-props.type'
 import { Score as WinnerType } from '../types/winner.type'
 import Player from './player.state'
 import Score from './score.state'
 import Word from './word.state'
 
 export default class MultiplayerRoomState extends Schema {
-  @type('number') gameId: number // The scheduled game's ID
+  @type('number') gameId: number // The scheduled game's ID.
 
-  @type('number') ownerId: number // The ID of the player who created this game
+  @type('number') ownerId: number // The ID of the player who created this game.
 
-  @type([Player]) players = new ArraySchema<Player>() // Players currently available in the game room
+  @type('string') startTime: string // The scheduled game's start time.
 
-  @type('boolean') guessing: boolean // The guessing state of the game (i.e. if a player has clicked on the 'guess' button or not)
+  @type([Player]) players = new ArraySchema<Player>() // Players currently available in the game room.
 
-  @type('number') round: number // Currently being played round
+  @type('number') round: number // Currently being played round.
 
-  @type('number') totalRound: number // Total number of rounds
+  @type('number') time: number // The countdown time currently being displayed.
 
-  @type('number') time: number // The countdown time currently being displayed
+  @type('number') cycle: number // The current word's cycle (i.e., how many cue words are displayed after the initial 2).
 
-  @type('number') cycle: number // The current word's cycle (i.e. how many cue words are displayed after the initial 3)
+  @type(Word) word: Word | null // The word row that is currently being played.
 
-  @type(Word) word: Word | undefined // The word row that is currently being played
+  @type('number') waitingCountdownTime: number // Countdown timer for the waiting windows.
 
-  @type('number') waitingCountdownTime: number // Countdown timer for the waiting windows
+  @type('string') gameState: GameState // The state of the current game.
 
-  @type('string')
-  gameState: 'START_COUNTDOWN' | 'ROUND_END' | 'GAME_STARTED' | 'GAME_END'
+  @type('string') gamePlayStatus: GamePlayStatus // The state the game is currently in.
 
-  @type('string') gameStatus: 'ONGOING' | 'PAUSED' // The state the game is currently in
+  @type(Score) winner: Score | null // The winner.
 
-  @type(Score) winner: Score | null // The winner
+  @type({ map: 'number' }) score = new MapSchema<number>() // Scores of the players (key is ID and value is score).
 
-  @type({ map: 'number' }) score = new MapSchema<number>() // Scores of the players (key is ID and value is score)
+  @type({ map: Score }) totalScore = new MapSchema<Score>() // Total scores of the players (key is player session ID, and value is total score).
 
-  @type({ map: Score }) totalScore = new MapSchema<Score>() // Total scores of the players (key is player session ID, and value is total score)
+  @type({ map: Score }) sessionScore = new MapSchema<Score>() // Total score summation of the players within one game session (key is player session ID, and value is total score).
 
-  @type({ map: Score }) sessionScore = new MapSchema<Score>() // Total score summation of the players within one game session (key is player session ID, and value is total score)
+  totalRound: number // Total number of rounds.
 
-  @type('boolean') gameStarted: boolean // Indicator for game start state
+  words: Word[] // All the words selected for this game.
 
-  words: Word[] // All the words selected for this game
-
-  constructor({
-    word,
-    guessing,
-    round,
-    totalRound,
-    time,
-    cycle,
-    waitingCountdownTime,
-    words,
-    gameState,
-    winner,
-    gameStarted,
-    gameId,
-    ownerId,
-  }: MultiplayerRoomProps) {
+  constructor({ gameId, ownerId, startTime }: MultiplayerRoomCreationProps) {
     super()
 
-    this.guessing = guessing
-    this.round = round
-    this.totalRound = totalRound
-    this.time = time
-    this.cycle = cycle
-    this.word = word
-    this.waitingCountdownTime = waitingCountdownTime
-    this.words = words
-    this.gameState = gameState
-    this.gameStatus = 'ONGOING'
-    this.winner = winner ?? null
-    this.gameStarted = gameStarted
     this.gameId = gameId
     this.ownerId = ownerId
+    this.startTime = startTime
+
+    this.round = 0
+    this.time = 0
+    this.cycle = 0
+    this.word = null
+    this.waitingCountdownTime = 0
+    this.gameState = GameState.LOBBY
+    this.gamePlayStatus = GamePlayStatus.PLAYING
+    this.winner = null
+    this.totalRound = MAX_ROUNDS_PER_GAME_LIMIT
   }
 
   /**

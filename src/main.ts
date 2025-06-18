@@ -9,7 +9,6 @@ import * as basicAuth from 'express-basic-auth'
 import { WinstonModule } from 'nest-winston'
 
 import AppModule from './app.module'
-import LobbyRoom from './logic/scheduled-games/lobby.room'
 import MultiplayerRoom from './logic/scheduled-games/multiplayer.room'
 import SoloRoom from './logic/scheduled-games/solo.room'
 import ValidationException from './utils/exceptions/validation.exception'
@@ -105,8 +104,7 @@ async function bootstrap() {
   })
 
   colyseusServer.define('solo', injectDeps(app, SoloRoom), { gameType: 'SOLO' })
-  colyseusServer.define('lobby', injectDeps(app, LobbyRoom))
-  colyseusServer.define('multiplayer', injectDeps(app, MultiplayerRoom))
+  colyseusServer.define('multiplayer', injectDeps(app, MultiplayerRoom), { gameType: 'MULTIPLAYER' })
 
   // Starts listening for shutdown hooks
   app.enableShutdownHooks()

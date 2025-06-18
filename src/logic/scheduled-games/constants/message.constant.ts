@@ -1,2 +1,7 @@
+export const START_GAME = 'start-game'
+export const START_NEW_GAME = 'start-new-game'
+export const PAUSE = 'pause'
+export const RESUME = 'resume'
 export const GUESS = 'guess'
 export const WRONG_GUESS = 'wrong-guess'
+export const GAME_RESTART_VOTE = 'game-restart-vote'

@@ -4,4 +4,8 @@ export class GetTokenDto {
   @IsString()
   @IsNotEmpty()
   gameId: string
+
+  @IsString()
+  @IsNotEmpty()
+  sessionId: string
 }

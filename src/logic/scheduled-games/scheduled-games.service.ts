@@ -36,7 +36,10 @@ export default class ScheduledGamesService {
   }
 
   findOne(id: number) {
-    return this.prismaService.scheduledGame.findUnique({ where: { id } })
+    return this.prismaService.scheduledGame.findUnique({
+      where: { id },
+      select: { id: true, type: true, start_time: true, invited_emails: true, accepted_emails: true, created_by: true },
+    })
   }
 
   async rsvp(rsvpDto: RsvpDto) {
@@ -53,7 +56,13 @@ export default class ScheduledGamesService {
           id: Number(rsvpDto.gameId),
         },
         data: {
-          accepted_emails: [...((game.accepted_emails ?? []) as JsonArray), { email: rsvpDto.email, reminder: ScheduledGameReminder.PENDING }] as JsonArray,
+          accepted_emails: [
+            ...((game.accepted_emails ?? []) as JsonArray),
+            {
+              email: rsvpDto.email,
+              reminder: ScheduledGameReminder.PENDING,
+            },
+          ] as JsonArray,
         },
       })
     }
@@ -186,10 +195,8 @@ export default class ScheduledGamesService {
       .map((emailObject) => emailObject['email'] as string)
 
     if (emailsToInviteToLobby.length > 0) {
-      const room = await matchMaker.createRoom('lobby', {
+      const room = await matchMaker.createRoom('multiplayer', {
         gameId: game.id,
-        startTime: game.start_time.toISOString(),
-        ownerId: game.created_by,
       })
 
       returnValue.lobbyId = room.roomId
@@ -203,7 +210,7 @@ export default class ScheduledGamesService {
             template: './game-reminder',
             context: {
               reminderMinutes: SCHEDULED_GAME_REMINDER_MINUTES,
-              link: `${this.configService.get<string>('FRONTEND_APP_URL')}/scheduled-game/${game.id}/lobby?id=${room.roomId}`,
+              link: `${this.configService.get<string>('FRONTEND_APP_URL')}/scheduled-game/${game.id}`,
             },
           }),
         )
