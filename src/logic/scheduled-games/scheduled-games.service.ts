@@ -159,7 +159,7 @@ export default class ScheduledGamesService {
       await Promise.all(emailSchedulePromises)
     }
 
-    return ''
+    return true
   }
 
   private async handleInstantScheduledGame(activePlayerData: ActivePlayerData, createRoomDto: CreateMultiplayerRoomDto) {
@@ -183,24 +183,24 @@ export default class ScheduledGamesService {
     return this.inviteToLobby(scheduledGame)
   }
 
-  private async inviteToLobby(game: ScheduledGame) {
+  private async inviteToLobby(scheduledGame: ScheduledGame) {
     const returnValue = { lobbyId: null, gameId: null }
     const gameReminderEmailPromises: Promise<{
       code: string
       message: string
     }>[] = []
 
-    const emailsToInviteToLobby = (game.accepted_emails as JsonArray)
+    const emailsToInviteToLobby = (scheduledGame.accepted_emails as JsonArray)
       .filter((emailObject) => emailObject['reminder'] === ScheduledGameReminder.PENDING)
       .map((emailObject) => emailObject['email'] as string)
 
     if (emailsToInviteToLobby.length > 0) {
       const room = await matchMaker.createRoom('multiplayer', {
-        gameId: game.id,
+        gameId: scheduledGame.id,
       })
 
       returnValue.lobbyId = room.roomId
-      returnValue.gameId = game.id
+      returnValue.gameId = scheduledGame.id
       emailsToInviteToLobby.forEach((email) => {
         gameReminderEmailPromises.push(
           this.mailService.sendMail({
@@ -210,7 +210,7 @@ export default class ScheduledGamesService {
             template: './game-reminder',
             context: {
               reminderMinutes: SCHEDULED_GAME_REMINDER_MINUTES,
-              link: `${this.configService.get<string>('FRONTEND_APP_URL')}/scheduled-game/${game.id}`,
+              link: `${this.configService.get<string>('FRONTEND_APP_URL')}/scheduled-game/${scheduledGame.id}/${room.roomId}`,
             },
           }),
         )

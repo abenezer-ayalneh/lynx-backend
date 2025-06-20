@@ -6,7 +6,6 @@ import {
   FOURTH_CYCLE_TIME,
   MID_GAME_COUNTDOWN,
   ROOM_AUTO_DISPOSE_TIMEOUT_SECONDS,
-  ROOM_RECONNECTION_TIMEOUT_SECONDS,
   SECOND_CYCLE_TIME,
   START_COUNTDOWN,
   THIRD_CYCLE_TIME,
@@ -29,12 +28,12 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
   /**
    * For the game preparation visual(s) to be shown
    */
-  public waitingCountdownInterval: Delayed
+  public waitingCountdownInterval: Delayed | undefined
 
   /**
    * The time elapsed for the game per cycle
    */
-  public gameTimeInterval: Delayed
+  public gameTimeInterval: Delayed | undefined
 
   constructor(
     private readonly gameService: GameService,
@@ -76,25 +75,6 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
   }
 
   /**
-   * Initiate a room and subscribe to the guess message type
-   */
-  startMultiplayerGame() {
-    // Configure initial states to start playing the multiplayer game
-
-    this.state.time = FIRST_CYCLE_TIME
-    this.state.cycle = 1
-    this.state.waitingCountdownTime = START_COUNTDOWN
-    this.state.words = []
-    this.state.gameState = GameState.START_COUNTDOWN
-    this.state.winner = null
-
-    // Start the game
-    this.startGame()
-      .then(() => this.logger.debug('Multiplayer game started'))
-      .catch((error) => this.logger.error(error))
-  }
-
-  /**
    * Triggered when a player successfully joins the room
    */
   onJoin(client: Client, options: MultiplayerRoomJoinDto, auth: { playerName: string }) {
@@ -130,33 +110,48 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
    * @param client
    * @param consented
    */
-  async onLeave(client: Client, consented: boolean) {
-    this.logger.debug(`Consented: ${consented}`)
-    try {
-      if (consented) {
-        throw new Error('Consented leave')
-      }
-
-      // allow the disconnected client to reconnect into this room until a give time in seconds
-      await this.allowReconnection(client, ROOM_RECONNECTION_TIMEOUT_SECONDS)
-    } catch (e) {
-      this.logger.error(e)
+  onLeave(client: Client, consented: boolean) {
+    if (consented && this.state.players.length === 1) {
       this.resetAutoDisposeTimeout(ROOM_AUTO_DISPOSE_TIMEOUT_SECONDS)
-      const indexToRemove = this.state.players.findIndex((player) => player.id === client.sessionId)
-      if (indexToRemove >= 0) {
-        this.state.score.delete(client.sessionId)
-        this.state.totalScore.delete(client.sessionId)
-        this.state.sessionScore.delete(client.sessionId)
-        this.state.players.splice(indexToRemove, 1)
-      }
     }
+
+    const indexToRemove = this.state.players.findIndex((player) => player.id === client.sessionId)
+    if (indexToRemove >= 0) {
+      this.state.score.delete(client.sessionId)
+      this.state.totalScore.delete(client.sessionId)
+      this.state.sessionScore.delete(client.sessionId)
+      this.state.players.splice(indexToRemove, 1)
+    }
+  }
+
+  /**
+   * Initiate a room and subscribe to the guess message type
+   */
+  startGame(playerId: string) {
+    // Configure initial states to start playing the multiplayer game
+    this.gameService
+      .create({ type: 'MULTIPLAYER', scheduledGameId: this.state.gameId }, Number(playerId))
+      .then(() => {
+        this.state.time = FIRST_CYCLE_TIME
+        this.state.cycle = 1
+        this.state.waitingCountdownTime = START_COUNTDOWN
+        this.state.words = []
+        this.state.gameState = GameState.START_COUNTDOWN
+        this.state.winner = null
+
+        // Start the game
+        this.initiateGame()
+          .then(() => this.logger.debug('Multiplayer game started'))
+          .catch((error) => this.logger.error(error))
+      })
+      .catch((error) => this.logger.error(error))
   }
 
   /**
    * Delayed countdown
    * @param timeoutTime
    */
-  createCountdown(timeoutTime: number) {
+  startRoundWithCountdown(timeoutTime: number) {
     this.waitingCountdownInterval = this.clock.setInterval(() => {
       this.state.waitingCountdownTime -= 1
     }, 1000)
@@ -165,7 +160,7 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
       () => {
         this.state.gameState = GameState.GAME_STARTED
         this.firstCycle()
-        this.waitingCountdownInterval.clear()
+        this.clearInterval(this.waitingCountdownInterval)
       },
       (timeoutTime + 1) * 1000,
     )
@@ -191,7 +186,7 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
       if (this.state.time <= 0) {
         this.state.time = SECOND_CYCLE_TIME
         this.state.word.cues[2].shown = true
-        this.gameTimeInterval.clear()
+        this.clearInterval(this.gameTimeInterval)
         this.secondCycle()
       }
     }, 1000)
@@ -208,7 +203,7 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
       if (this.state.time <= 0) {
         this.state.time = THIRD_CYCLE_TIME
         this.state.word.cues[3].shown = true
-        this.gameTimeInterval.clear()
+        this.clearInterval(this.gameTimeInterval)
         this.thirdCycle()
       }
     }, 1000)
@@ -227,7 +222,7 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
       if (this.state.time <= 0) {
         this.state.time = FOURTH_CYCLE_TIME
         this.state.word.cues[4].shown = true
-        this.gameTimeInterval.clear()
+        this.clearInterval(this.gameTimeInterval)
         this.fourthCycle()
       }
     }, 1000)
@@ -245,7 +240,7 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
 
       if (this.state.time <= 0) {
         this.stopCurrentRoundOrGame()
-        this.gameTimeInterval.clear()
+        this.clearInterval(this.gameTimeInterval)
       }
     }, 1000)
   }
@@ -253,7 +248,7 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
   /**
    * Prepare the necessary steps needed for a multiplayer game to start
    */
-  async startGame() {
+  async initiateGame() {
     // Fetch the associated game with the current game
     const scheduledGame = await this.scheduledGameService.findOne(this.state.gameId)
     if (scheduledGame) {
@@ -262,10 +257,10 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
       // Set the words state variable
       if (game) {
         this.state.words = game.Words.map((word) => new Word(word))
-      }
 
-      // Start game preparation countdown
-      this.createCountdown(START_COUNTDOWN)
+        // Start game preparation countdown
+        this.startRoundWithCountdown(START_COUNTDOWN)
+      }
     }
   }
 
@@ -286,7 +281,7 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
 
     this.gameService
       .create({ type: 'MULTIPLAYER', scheduledGameId: this.state.gameId }, this.state.ownerId)
-      .then(() => this.startGame())
+      .then(() => this.initiateGame())
       .catch((error) => this.logger.error(error))
   }
 
@@ -319,11 +314,11 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
   private stopCurrentRoundOrGame() {
     this.state.gameState = GameState.ROUND_END
     this.state.waitingCountdownTime = MID_GAME_COUNTDOWN
-    this.gameTimeInterval.clear()
+    this.clearInterval(this.gameTimeInterval)
 
-    // Game is not done but the current round is
+    // Game is not done but the current round is.
     if (this.state.words.length > this.state.round) {
-      this.createCountdown(MID_GAME_COUNTDOWN)
+      this.startRoundWithCountdown(MID_GAME_COUNTDOWN)
     } else {
       this.waitingCountdownInterval = this.clock.setInterval(() => {
         this.state.waitingCountdownTime -= 1
@@ -332,7 +327,7 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
           this.state.gameState = GameState.GAME_END
           this.state.time = 0
           this.state.word = undefined
-          this.waitingCountdownInterval.clear()
+          this.clearInterval(this.waitingCountdownInterval)
         }
       }, 1000)
     }
@@ -360,7 +355,7 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
    * @private
    */
   private registerMessages() {
-    this.onMessage(START_GAME, () => this.startMultiplayerGame())
+    this.onMessage(START_GAME, (_, message: { playerId: string }) => this.startGame(message.playerId))
 
     this.onMessage(PAUSE, () => this.pauseGame())
 
@@ -407,14 +402,22 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
   }
 
   private pauseGame() {
-    this.waitingCountdownInterval.pause()
-    this.gameTimeInterval.pause()
+    this.waitingCountdownInterval?.pause()
+    this.gameTimeInterval?.pause()
+    this.clock.stop()
     this.state.gamePlayStatus = GamePlayStatus.PAUSED
   }
 
   private resumeGame() {
-    this.waitingCountdownInterval.resume()
-    this.gameTimeInterval.resume()
+    this.waitingCountdownInterval?.resume()
+    this.gameTimeInterval?.resume()
+    this.clock.start()
     this.state.gamePlayStatus = GamePlayStatus.PLAYING
+  }
+
+  private clearInterval(interval: Delayed | undefined | null) {
+    if (interval) {
+      interval.clear()
+    }
   }
 }

@@ -19,6 +19,8 @@ export default class MultiplayerRoomState extends Schema {
 
   @type('number') round: number // Currently being played round.
 
+  @type('number') totalRound: number // Total number of rounds.
+
   @type('number') time: number // The countdown time currently being displayed.
 
   @type('number') cycle: number // The current word's cycle (i.e., how many cue words are displayed after the initial 2).
@@ -38,8 +40,6 @@ export default class MultiplayerRoomState extends Schema {
   @type({ map: Score }) totalScore = new MapSchema<Score>() // Total scores of the players (key is player session ID, and value is total score).
 
   @type({ map: Score }) sessionScore = new MapSchema<Score>() // Total score summation of the players within one game session (key is player session ID, and value is total score).
-
-  totalRound: number // Total number of rounds.
 
   words: Word[] // All the words selected for this game.
 
