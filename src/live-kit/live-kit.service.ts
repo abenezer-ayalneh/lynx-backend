@@ -18,8 +18,8 @@ export class LiveKitService {
 
     const at = new AccessToken(this.configService.get<string>('LIVEKIT_API_KEY'), this.configService.get<string>('LIVEKIT_API_SECRET'), {
       identity: participantName,
-      // Token to expire after 10 minutes
-      ttl: '10m',
+      // Token to expire after 1 day
+      ttl: '1 day',
     })
     at.addGrant({ roomJoin: true, room: roomName })
 
