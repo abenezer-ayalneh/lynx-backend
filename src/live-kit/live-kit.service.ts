@@ -14,7 +14,7 @@ export class LiveKitService {
     const roomName = `lynx-voice-room-${getTokenDto.gameId}`
     // Identifier to be used for participant.
     // It's available as LocalParticipant.identity with live-kit-client SDK
-    const participantName = `lynx-player-${getTokenDto.sessionId}`
+    const participantName = getTokenDto.sessionId
 
     const at = new AccessToken(this.configService.get<string>('LIVEKIT_API_KEY'), this.configService.get<string>('LIVEKIT_API_SECRET'), {
       identity: participantName,
