@@ -116,7 +116,7 @@ async function bootstrap() {
   await app.init()
 
   // Initialize the colyseus server
-  await colyseusServer.listen(port).then(() => logger.verbose(`Application running at: ${port}`))
+  await colyseusServer.listen(port, '0.0.0.0').then(() => logger.verbose(`Application running at: ${port}`))
 }
 
 bootstrap()
