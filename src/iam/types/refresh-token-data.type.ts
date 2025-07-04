@@ -1,3 +1,3 @@
 export type RefreshTokenData = {
-  refreshTokenId: `${string}-${string}-${string}-${string}-${string}`
+	refreshTokenId: `${string}-${string}-${string}-${string}-${string}`
 }

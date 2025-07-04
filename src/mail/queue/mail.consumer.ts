@@ -7,14 +7,14 @@ import { MAIL_QUEUE_NAME } from '../../commons/constants/email.constant'
 
 @Processor(MAIL_QUEUE_NAME)
 export default class MailConsumer {
-  logger = new Logger('MailConsumer')
+	logger = new Logger('MailConsumer')
 
-  constructor(private mailerService: MailerService) {}
+	constructor(private mailerService: MailerService) {}
 
-  @Process()
-  async transcode(job: Job<ISendMailOptions>) {
-    const result = (await this.mailerService.sendMail(job.data)) as object
+	@Process()
+	async transcode(job: Job<ISendMailOptions>) {
+		const result = (await this.mailerService.sendMail(job.data)) as object
 
-    this.logger.verbose({ sendMailResult: result })
-  }
+		this.logger.verbose({ sendMailResult: result })
+	}
 }

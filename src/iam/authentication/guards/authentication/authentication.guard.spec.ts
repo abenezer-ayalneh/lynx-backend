@@ -1,5 +1,5 @@
 describe('AuthenticationGuard', () => {
-  it('should be defined', () => {
-    // expect(new AuthenticationGuard()).toBeDefined()
-  })
+	it('should be defined', () => {
+		// expect(new AuthenticationGuard()).toBeDefined()
+	})
 })

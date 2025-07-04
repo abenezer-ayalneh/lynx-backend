@@ -6,8 +6,8 @@ import ScheduledGamesController from './scheduled-games.controller'
 import ScheduledGamesService from './scheduled-games.service'
 
 @Module({
-  imports: [GameModule, MailModule],
-  controllers: [ScheduledGamesController],
-  providers: [ScheduledGamesService],
+	imports: [GameModule, MailModule],
+	controllers: [ScheduledGamesController],
+	providers: [ScheduledGamesService],
 })
 export default class ScheduledGamesModule {}

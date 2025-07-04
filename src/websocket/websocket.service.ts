@@ -3,5 +3,5 @@ import { Server } from 'socket.io'
 
 @Injectable()
 export default class WebsocketService {
-  public socket: Server = null
+	public socket: Server = null
 }

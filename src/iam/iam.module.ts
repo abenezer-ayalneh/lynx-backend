@@ -13,20 +13,20 @@ import BcryptService from './hashing/bcrypt.service'
 import HashingService from './hashing/hashing.service'
 
 @Module({
-  imports: [JwtModule.registerAsync(jwtConfig.asProvider()), ConfigModule.forFeature(jwtConfig)],
-  providers: [
-    {
-      provide: HashingService,
-      useClass: BcryptService,
-    },
-    {
-      provide: APP_GUARD,
-      useClass: AuthenticationGuard,
-    },
-    AccessTokenGuard,
-    RefreshTokenIdsStorage,
-    AuthenticationService,
-  ],
-  controllers: [AuthenticationController],
+	imports: [JwtModule.registerAsync(jwtConfig.asProvider()), ConfigModule.forFeature(jwtConfig)],
+	providers: [
+		{
+			provide: HashingService,
+			useClass: BcryptService,
+		},
+		{
+			provide: APP_GUARD,
+			useClass: AuthenticationGuard,
+		},
+		AccessTokenGuard,
+		RefreshTokenIdsStorage,
+		AuthenticationService,
+	],
+	controllers: [AuthenticationController],
 })
 export default class IamModule {}

@@ -3,17 +3,17 @@ import { Server } from 'colyseus'
 
 @Injectable()
 export default class LogicService implements OnApplicationShutdown {
-  server: Server = null
+	server: Server = null
 
-  logger: Logger
+	logger: Logger
 
-  constructor() {
-    this.logger = new Logger('LogicService')
-  }
+	constructor() {
+		this.logger = new Logger('LogicService')
+	}
 
-  async onApplicationShutdown(sig) {
-    if (!this.server) return
-    this.logger.warn(`Caught signal ${sig}. Game service shutting down on ${new Date().toUTCString()}.`)
-    await this.server.gracefullyShutdown()
-  }
+	async onApplicationShutdown(sig) {
+		if (!this.server) return
+		this.logger.warn(`Caught signal ${sig}. Game service shutting down on ${new Date().toUTCString()}.`)
+		await this.server.gracefullyShutdown()
+	}
 }

@@ -18,26 +18,26 @@ import WebsocketGateway from './websocket/websocket.gateway'
 import WebsocketModule from './websocket/websocket.module'
 
 @Module({
-  imports: [
-    ConfigModule.forRoot({ isGlobal: true, expandVariables: true }),
-    ScheduleModule.forRoot(),
-    CacheModule.registerAsync<RedisClientOptions>({
-      isGlobal: true,
-      imports: [ConfigModule],
-      inject: [ConfigService],
-      useFactory: (config: ConfigService) => ({
-        stores: [createKeyv(config.get<string>('REDIS_URL'))],
-      }),
-    }),
-    WebsocketModule,
-    IamModule,
-    PrismaModule,
-    LogicModule,
-    MailModule,
-    WordsModule,
-    LiveKitModule,
-  ],
-  controllers: [AppController],
-  providers: [Logger, AppService, WebsocketGateway, { provide: APP_FILTER, useClass: GlobalExceptionFilter }],
+	imports: [
+		ConfigModule.forRoot({ isGlobal: true, expandVariables: true }),
+		ScheduleModule.forRoot(),
+		CacheModule.registerAsync<RedisClientOptions>({
+			isGlobal: true,
+			imports: [ConfigModule],
+			inject: [ConfigService],
+			useFactory: (config: ConfigService) => ({
+				stores: [createKeyv(config.get<string>('REDIS_URL'))],
+			}),
+		}),
+		WebsocketModule,
+		IamModule,
+		PrismaModule,
+		LogicModule,
+		MailModule,
+		WordsModule,
+		LiveKitModule,
+	],
+	controllers: [AppController],
+	providers: [Logger, AppService, WebsocketGateway, { provide: APP_FILTER, useClass: GlobalExceptionFilter }],
 })
 export default class AppModule {}

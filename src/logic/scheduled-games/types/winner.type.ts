@@ -1,5 +1,5 @@
 export type Score = {
-  id: string
-  name: string
-  score: number
+	id: string
+	name: string
+	score: number
 }

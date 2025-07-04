@@ -41,7 +41,7 @@ model Game {
   type              GameType
   status            Boolean   @default(true)
   owner_id          Int
-  scheduled_game_id Int?
+  scheduled_game_id String?
   created_at        DateTime  @default(now())
   updated_at        DateTime? @updatedAt()
   deleted_at        DateTime?
@@ -72,10 +72,10 @@ model Player {
 }
 
 model ScheduledGame {
-  id              Int                 @id @default(autoincrement())
+  id              String              @id @default(uuid(7))
   invitation_text String
   invited_emails  String[]
-  accepted_emails Json?
+  room_id         String              @unique()
   type            ScheduledGameType
   start_time      DateTime
   max_players     Int                 @default(8)
@@ -93,14 +93,9 @@ model ScheduledGame {
 }
 
 enum ScheduledGameStatus {
-  PENDING // The scheduled time has not passed yet
-  ACTIVE // The scheduled time has passed
-  DONE // The game has been played(or not) and is done. This means this game will not trigger colyseus room creations any more
-}
-
-enum ScheduledGameReminder {
-  PENDING
-  SENT
+  PENDING // The scheduled time has not passed yet.
+  ACTIVE // The scheduled time has passed.
+  DONE // The game has been played(or not) and is done. This means this game's colyseus room will not exist.
 }
 
 enum ScheduledGameType {

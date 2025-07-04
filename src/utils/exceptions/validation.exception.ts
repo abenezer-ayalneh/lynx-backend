@@ -2,30 +2,30 @@ import { HttpStatus } from '@nestjs/common'
 import { ValidationError } from 'class-validator'
 
 export default class ValidationException {
-  private error: string
+	private error: string
 
-  private message: string | object
+	private message: string | object
 
-  private statusCode: number
+	private statusCode: number
 
-  constructor(validationErrors: ValidationError[]) {
-    this.error = 'Validation Error'
-    this.message = validationErrors.map((error) => ({
-      field: error.property,
-      errors: error.constraints,
-    }))
-    this.statusCode = HttpStatus.UNPROCESSABLE_ENTITY
-  }
+	constructor(validationErrors: ValidationError[]) {
+		this.error = 'Validation Error'
+		this.message = validationErrors.map((error) => ({
+			field: error.property,
+			errors: error.constraints,
+		}))
+		this.statusCode = HttpStatus.UNPROCESSABLE_ENTITY
+	}
 
-  get getError(): string {
-    return this.error
-  }
+	get getError(): string {
+		return this.error
+	}
 
-  get getMessage(): string | object {
-    return this.message
-  }
+	get getMessage(): string | object {
+		return this.message
+	}
 
-  get getStatusCode(): number {
-    return this.statusCode
-  }
+	get getStatusCode(): number {
+		return this.statusCode
+	}
 }

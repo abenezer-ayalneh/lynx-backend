@@ -4,5 +4,5 @@ import MailService from './mail.service'
 
 @Controller('mail')
 export default class MailController {
-  constructor(private readonly mailService: MailService) {}
+	constructor(private readonly mailService: MailService) {}
 }

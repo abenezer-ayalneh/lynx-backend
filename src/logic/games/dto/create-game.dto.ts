@@ -1,12 +1,12 @@
 import { GameType } from '@prisma/client'
-import { IsEnum, IsNotEmpty, IsNumber, IsOptional } from 'class-validator'
+import { IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator'
 
 export default class CreateGameDto {
-  @IsEnum(GameType)
-  @IsNotEmpty()
-  type: GameType
+	@IsEnum(GameType)
+	@IsNotEmpty()
+	type: GameType
 
-  @IsNumber()
-  @IsOptional()
-  scheduledGameId?: number
+	@IsString()
+	@IsOptional()
+	scheduledGameId?: string
 }

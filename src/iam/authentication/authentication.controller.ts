@@ -11,42 +11,42 @@ import AuthType from './enums/auth-type.enum'
 @Auth(AuthType.None)
 @Controller('authentication')
 export default class AuthenticationController {
-  constructor(private readonly authService: AuthenticationService) {}
+	constructor(private readonly authService: AuthenticationService) {}
 
-  @Post('sign-up')
-  signUp(@Body() signUpDto: SignUpDto) {
-    return this.authService.signUp(signUpDto)
-  }
+	@Post('sign-up')
+	signUp(@Body() signUpDto: SignUpDto) {
+		return this.authService.signUp(signUpDto)
+	}
 
-  @HttpCode(HttpStatus.OK)
-  @Post('sign-in')
-  signIn(@Body() signInDto: SignInDto) {
-    return this.authService.signIn(signInDto)
-  }
+	@HttpCode(HttpStatus.OK)
+	@Post('sign-in')
+	signIn(@Body() signInDto: SignInDto) {
+		return this.authService.signIn(signInDto)
+	}
 
-  @HttpCode(HttpStatus.OK)
-  @Post('refresh-token')
-  refreshToken(@Body() refreshTokenDto: RefreshTokenDto) {
-    return this.authService.refreshTokens(refreshTokenDto)
-  }
+	@HttpCode(HttpStatus.OK)
+	@Post('refresh-token')
+	refreshToken(@Body() refreshTokenDto: RefreshTokenDto) {
+		return this.authService.refreshTokens(refreshTokenDto)
+	}
 
-  @Auth(AuthType.Bearer)
-  @Get('check-token')
-  checkToken(@ActiveUser('sub') playerId: string) {
-    return this.authService.checkToken(+playerId)
-  }
+	@Auth(AuthType.Bearer)
+	@Get('check-token')
+	checkToken(@ActiveUser('sub') playerId: string) {
+		return this.authService.checkToken(+playerId)
+	}
 
-  // @HttpCode(HttpStatus.OK)
-  // @Post('sign-in')
-  // async signIn(
-  //   @Res({ passthrough: true }) response: Response,
-  //   @Body() signInDto: SignInDto,
-  // ) {
-  //   const accessToken = await this.authService.signIn(signInDto)
-  //   response.cookie('accessToken', accessToken, {
-  //     secure: true,
-  //     httpOnly: true,
-  //     sameSite: true,
-  //   })
-  // }
+	// @HttpCode(HttpStatus.OK)
+	// @Post('sign-in')
+	// async signIn(
+	//   @Res({ passthrough: true }) response: Response,
+	//   @Body() signInDto: SignInDto,
+	// ) {
+	//   const accessToken = await this.authService.signIn(signInDto)
+	//   response.cookie('accessToken', accessToken, {
+	//     secure: true,
+	//     httpOnly: true,
+	//     sameSite: true,
+	//   })
+	// }
 }

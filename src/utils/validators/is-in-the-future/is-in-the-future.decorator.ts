@@ -14,34 +14,34 @@ import { isFuture, parseISO } from 'date-fns'
  * @returns {(object: object, propertyName: string) => void} - A function that registers the custom decorator.
  */
 const IsInTheFuture = (timezoneFieldName: string, validationOptions?: ValidationOptions): ((object: object, propertyName: string) => void) => {
-  return (object: object, propertyName: string) => {
-    registerDecorator({
-      name: 'isInTheFuture',
-      target: object.constructor,
-      propertyName,
-      constraints: [timezoneFieldName],
-      options: {
-        message: 'Date must be in the future',
-        ...validationOptions,
-      },
-      async: false,
-      validator: {
-        validate(dateString: string, args: ValidationArguments) {
-          const constraint = args.constraints[0] as string
-          if (!args.object[constraint]) {
-            throw Error('Constraint name does not exist inside the dto')
-          }
+	return (object: object, propertyName: string) => {
+		registerDecorator({
+			name: 'isInTheFuture',
+			target: object.constructor,
+			propertyName,
+			constraints: [timezoneFieldName],
+			options: {
+				message: 'Date must be in the future',
+				...validationOptions,
+			},
+			async: false,
+			validator: {
+				validate(dateString: string, args: ValidationArguments) {
+					const constraint = args.constraints[0] as string
+					if (!args.object[constraint]) {
+						throw Error('Constraint name does not exist inside the dto')
+					}
 
-          const timezone = args.object[constraint] as string
-          const startTimeIso = parseISO(dateString, {
-            in: tz(timezone),
-          })
+					const timezone = args.object[constraint] as string
+					const startTimeIso = parseISO(dateString, {
+						in: tz(timezone),
+					})
 
-          return isFuture(startTimeIso)
-        },
-      },
-    })
-  }
+					return isFuture(startTimeIso)
+				},
+			},
+		})
+	}
 }
 
 export default IsInTheFuture

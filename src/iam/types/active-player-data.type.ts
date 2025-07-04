@@ -1,4 +1,4 @@
 export type ActivePlayerData = {
-  sub: number
-  email: string
+	sub: number
+	email: string
 }

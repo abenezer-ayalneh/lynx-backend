@@ -1,6 +1,6 @@
 enum AuthType {
-  Bearer,
-  None,
+	Bearer,
+	None,
 }
 
 export default AuthType

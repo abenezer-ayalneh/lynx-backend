@@ -1,4 +1,4 @@
 export interface RestartGameVoteProps {
-  id: string
-  vote: boolean
+	id: string
+	vote: boolean
 }

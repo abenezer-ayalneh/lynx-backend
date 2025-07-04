@@ -8,10 +8,10 @@ import { LiveKitService } from './live-kit.service'
 @Auth(AuthType.None)
 @Controller('live-kit')
 export class LiveKitController {
-  constructor(private readonly liveKitService: LiveKitService) {}
+	constructor(private readonly liveKitService: LiveKitService) {}
 
-  @Get('token')
-  getToken(@Query() getTokenDto: GetTokenDto) {
-    return this.liveKitService.getToken(getTokenDto)
-  }
+	@Get('token')
+	getToken(@Query() getTokenDto: GetTokenDto) {
+		return this.liveKitService.getToken(getTokenDto)
+	}
 }
