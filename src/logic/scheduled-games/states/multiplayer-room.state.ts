@@ -89,6 +89,23 @@ export default class MultiplayerRoomState extends Schema {
 	}
 
 	/**
+	 * Removes a user from the player list, as well as associated scores.
+	 *
+	 * @param {string} sessionId - The unique identifier for the user session to remove.
+	 * @return {void} This method does not return a value.
+	 */
+	removeUser(sessionId: string): void {
+		const indexToRemove = this.players.findIndex((player) => player.id === sessionId)
+
+		if (indexToRemove >= 0) {
+			this.score.delete(sessionId)
+			this.totalScore.delete(sessionId)
+			this.sessionScore.delete(sessionId)
+			this.players.splice(indexToRemove, 1)
+		}
+	}
+
+	/**
 	 * Records a player's vote for restarting the game.
 	 *
 	 * @param sessionId

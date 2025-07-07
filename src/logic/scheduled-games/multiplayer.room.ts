@@ -75,6 +75,9 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
 	 * Triggered when a player successfully joins the room
 	 */
 	onJoin(client: Client, options: MultiplayerRoomJoinDto, auth: { playerName: string }) {
+		// This will disable the auto-dispose feature.
+		this.autoDispose = false
+
 		// Start the session's score as 0
 		this.state.score.set(client.sessionId, 0)
 		this.state.totalScore.set(
@@ -105,20 +108,18 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
 	/**
 	 *  Triggered when a player leaves the room
 	 * @param client
-	 * @param consented
 	 */
-	onLeave(client: Client, consented: boolean) {
-		if (consented && this.state.players.length === 1) {
+	onLeave(client: Client) {
+		if (this.state.gameState !== GameState.LOBBY && this.state.players.length === 1) {
+			this.autoDispose = true
 			this.resetAutoDisposeTimeout(ROOM_AUTO_DISPOSE_TIMEOUT_SECONDS)
 		}
 
-		const indexToRemove = this.state.players.findIndex((player) => player.id === client.sessionId)
-		if (indexToRemove >= 0) {
-			this.state.score.delete(client.sessionId)
-			this.state.totalScore.delete(client.sessionId)
-			this.state.sessionScore.delete(client.sessionId)
-			this.state.players.splice(indexToRemove, 1)
-		}
+		this.state.removeUser(client.sessionId)
+	}
+
+	onDispose(): void {
+		this.logger.debug('Multiplayer room disposed')
 	}
 
 	/**
