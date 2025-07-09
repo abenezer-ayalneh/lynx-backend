@@ -6,8 +6,9 @@ import { MAX_PLAYERS_PER_ROOM_LIMIT } from '../../commons/constants/common.const
 import {
 	FIRST_CYCLE_TIME,
 	FOURTH_CYCLE_TIME,
+	IDLE_ROOM_AUTO_DISPOSE_TIMEOUT_MILLISECONDS,
 	MID_GAME_COUNTDOWN,
-	ROOM_AUTO_DISPOSE_TIMEOUT_SECONDS,
+	ON_LEAVE_ROOM_AUTO_DISPOSE_TIMEOUT_MILLISECONDS,
 	SECOND_CYCLE_TIME,
 	START_COUNTDOWN,
 	THIRD_CYCLE_TIME,
@@ -37,14 +38,16 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
 	 */
 	public gameTimeInterval: Delayed | undefined
 
+	disposeTimeout: ReturnType<typeof setTimeout> | undefined
+
 	constructor(
 		private readonly gameService: GameService,
 		private readonly scheduledGameService: ScheduledGamesService,
 	) {
 		super()
 		this.logger = new Logger('MultiplayerRoom')
-		this.autoDispose = false
 		this.maxClients = MAX_PLAYERS_PER_ROOM_LIMIT
+		this.autoDispose = false
 	}
 
 	/**
@@ -62,23 +65,43 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
 	/**
 	 * Initiate a room and subscribe to the guess message type
 	 */
-	onCreate() {
+	onCreate({ startTimeInMilliseconds }: { startTimeInMilliseconds: number }) {
 		// Initiate the game room's state
 		const multiplayerRoomState = new MultiplayerRoomState()
 		this.setState(multiplayerRoomState)
 
 		// Register(subscribe) to necessary messages/events
 		this.registerMessages()
+
+		// Dispose the game room `IDLE_ROOM_AUTO_DISPOSE_TIMEOUT_SECONDS` after game start time if no one joined it.
+		const autoDisposeTimeInMilliseconds = Math.max(0, startTimeInMilliseconds - new Date().getTime()) + IDLE_ROOM_AUTO_DISPOSE_TIMEOUT_MILLISECONDS
+		this.inactivityTimeoutDisposal(autoDisposeTimeInMilliseconds)
+		this.logger.debug(`Room will be disposed in ${autoDisposeTimeInMilliseconds} milliseconds if no one joined it.`)
+	}
+
+	inactivityTimeoutDisposal(autoDisposeTimeInMilliseconds: number) {
+		this.disposeTimeout = setTimeout(() => {
+			if (this.state.gameState === GameState.LOBBY) {
+				// Game has not started yet, no players in the lobby, initial timeout has elapsed.
+				if (this.state.players.length === 0) {
+					this.disconnect()
+						.then(() => this.logger.debug('Room disposed due to inactivity.'))
+						.catch((error) => this.logger.error(error))
+				} else {
+					// Game has not started yet, players are waiting in the lobby, the initial inactivity timeout has elapsed.
+					// Then wait for `ON_LEAVE_ROOM_AUTO_DISPOSE_TIMEOUT_SECONDS` amount and try again.
+					this.logger.debug(`Wait for ${ON_LEAVE_ROOM_AUTO_DISPOSE_TIMEOUT_MILLISECONDS} seconds to dispose the room.`)
+					this.inactivityTimeoutDisposal(ON_LEAVE_ROOM_AUTO_DISPOSE_TIMEOUT_MILLISECONDS)
+				}
+			}
+		}, autoDisposeTimeInMilliseconds)
 	}
 
 	/**
 	 * Triggered when a player successfully joins the room
 	 */
 	onJoin(client: Client, options: MultiplayerRoomJoinDto, auth: { playerName: string }) {
-		// This will disable the auto-dispose feature.
-		this.autoDispose = false
-
-		// Start the session's score as 0
+		// Start the session's score as 0.
 		this.state.score.set(client.sessionId, 0)
 		this.state.totalScore.set(
 			client.sessionId,
@@ -102,7 +125,7 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
 			this.state.players.push(new Player(client.sessionId, auth.playerName))
 		}
 
-		logger.info(`Player joined with sessionId: ${client.sessionId}`)
+		logger.debug(`Player joined with sessionId: ${client.sessionId}`)
 	}
 
 	/**
@@ -110,16 +133,22 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
 	 * @param client
 	 */
 	onLeave(client: Client) {
+		// If the game has been played and when the last player leaves the room, wait for `ON_LEAVE_ROOM_AUTO_DISPOSE_TIMEOUT_SECONDS` number of seconds
+		// and then dispose the game room.
 		if (this.state.gameState !== GameState.LOBBY && this.state.players.length === 1) {
-			this.autoDispose = true
-			this.resetAutoDisposeTimeout(ROOM_AUTO_DISPOSE_TIMEOUT_SECONDS)
+			this.disposeTimeout = setTimeout(() => {
+				this.disconnect()
+					.then(() => this.logger.debug('Room disposed when last player left.'))
+					.catch((error) => this.logger.error(error))
+			}, ON_LEAVE_ROOM_AUTO_DISPOSE_TIMEOUT_MILLISECONDS)
+			this.logger.debug(`Room will be disposed in ${ON_LEAVE_ROOM_AUTO_DISPOSE_TIMEOUT_MILLISECONDS} milliseconds after the last player left.`)
 		}
 
-		this.state.removeUser(client.sessionId)
+		this.state.removePlayer(client.sessionId)
 	}
 
 	onDispose(): void {
-		this.logger.debug('Multiplayer room disposed')
+		this.logger.debug('ROOM DISPOSED')
 	}
 
 	/**

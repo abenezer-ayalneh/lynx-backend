@@ -25,8 +25,6 @@ export default class ScheduledGamesService {
 	}
 
 	async create(activePlayerData: ActivePlayerData, createRoomDto: CreateMultiplayerRoomDto) {
-		const room = await matchMaker.createRoom('multiplayer', {})
-
 		const emailsToSendInvitationTo = [...createRoomDto.emails, activePlayerData.email]
 
 		const startTimeIsoWithTimezone =
@@ -35,6 +33,8 @@ export default class ScheduledGamesService {
 						in: tz(createRoomDto.timezone),
 					})
 				: new Date()
+
+		const room = await matchMaker.createRoom('multiplayer', { startTimeInMilliseconds: startTimeIsoWithTimezone.getTime() })
 
 		const scheduledGame = await this.prismaService.scheduledGame.create({
 			data: {

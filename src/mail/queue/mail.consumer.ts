@@ -13,8 +13,6 @@ export default class MailConsumer {
 
 	@Process()
 	async transcode(job: Job<ISendMailOptions>) {
-		const result = (await this.mailerService.sendMail(job.data)) as object
-
-		this.logger.verbose({ sendMailResult: result })
+		await this.mailerService.sendMail(job.data)
 	}
 }

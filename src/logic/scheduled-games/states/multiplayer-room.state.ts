@@ -94,7 +94,7 @@ export default class MultiplayerRoomState extends Schema {
 	 * @param {string} sessionId - The unique identifier for the user session to remove.
 	 * @return {void} This method does not return a value.
 	 */
-	removeUser(sessionId: string): void {
+	removePlayer(sessionId: string): void {
 		const indexToRemove = this.players.findIndex((player) => player.id === sessionId)
 
 		if (indexToRemove >= 0) {
