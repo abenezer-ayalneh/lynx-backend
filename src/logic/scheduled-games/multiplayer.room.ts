@@ -38,6 +38,11 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
 	 */
 	public gameTimeInterval: Delayed | undefined
 
+	/**
+	 * A clock timeout variable which holds the timeouts needed when transitioning between games states or cycles
+	 */
+	public transitionTimeout: Delayed | undefined
+
 	disposeTimeout: ReturnType<typeof setTimeout> | undefined
 
 	constructor(
@@ -155,6 +160,9 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
 	 * Initiate a room and subscribe to the guess message type
 	 */
 	startGame(scheduledGameId: string, ownerId: number) {
+		// Start the clock ticking
+		this.clock.start()
+
 		// Configure initial states to start playing the multiplayer game
 		this.gameService
 			.create({ type: GameType.MULTIPLAYER, scheduledGameId }, ownerId)
@@ -183,7 +191,7 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
 			this.state.waitingCountdownTime -= 1
 		}, 1000)
 
-		this.clock.setTimeout(
+		this.transitionTimeout = this.clock.setTimeout(
 			() => {
 				this.state.gameState = GameState.GAME_STARTED
 				this.firstCycle()
@@ -447,16 +455,16 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
 	}
 
 	private pauseGame() {
+		this.transitionTimeout?.pause()
 		this.waitingCountdownInterval?.pause()
 		this.gameTimeInterval?.pause()
-		this.clock.stop()
 		this.state.gamePlayStatus = GamePlayStatus.PAUSED
 	}
 
 	private resumeGame() {
+		this.transitionTimeout?.resume()
 		this.waitingCountdownInterval?.resume()
 		this.gameTimeInterval?.resume()
-		this.clock.start()
 		this.state.gamePlayStatus = GamePlayStatus.PLAYING
 	}
 
