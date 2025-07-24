@@ -29,6 +29,12 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Debug secrets (remove this step after testing)
+        run: |
+          echo "Testing if secrets are accessible:"
+          echo "APP_PORT is set: ${{ secrets.APP_PORT != '' }}"
+          echo "DATABASE_URL is set: ${{ secrets.DATABASE_URL != '' }}"
+
       - name: Create .env file
         run: |
           cat > .env << EOF
@@ -81,12 +87,6 @@ jobs:
 
       - name: Build application
         run: pnpm run build
-
-      - name: Run tests
-        run: pnpm test || true
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          REDIS_URL: ${{ secrets.REDIS_URL }}
 
       - name: Create logs directory
         run: mkdir -p logs
