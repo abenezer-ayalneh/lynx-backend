@@ -85,6 +85,10 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
 	}
 
 	inactivityTimeoutDisposal(autoDisposeTimeInMilliseconds: number) {
+		// Clear any existing dispose timeout to prevent memory leaks
+		if (this.disposeTimeout) {
+			clearTimeout(this.disposeTimeout)
+		}
 		this.disposeTimeout = setTimeout(() => {
 			if (this.state.gameState === GameState.LOBBY) {
 				// Game has not started yet, no players in the lobby, initial timeout has elapsed.
@@ -141,6 +145,10 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
 		// If the game has been played and when the last player leaves the room, wait for `ON_LEAVE_ROOM_AUTO_DISPOSE_TIMEOUT_SECONDS` number of seconds
 		// and then dispose the game room.
 		if (this.state.gameState !== GameState.LOBBY && this.state.players.length === 1) {
+			// Clear any existing dispose timeout to prevent memory leaks
+			if (this.disposeTimeout) {
+				clearTimeout(this.disposeTimeout)
+			}
 			this.disposeTimeout = setTimeout(() => {
 				this.disconnect()
 					.then(() => this.logger.debug('Room disposed when last player left.'))
@@ -154,6 +162,14 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
 
 	onDispose(): void {
 		this.logger.debug('ROOM DISPOSED')
+		// Clear all intervals and timeouts to prevent memory leaks
+		this.clearInterval(this.waitingCountdownInterval)
+		this.clearInterval(this.gameTimeInterval)
+		this.clearInterval(this.transitionTimeout)
+		if (this.disposeTimeout) {
+			clearTimeout(this.disposeTimeout)
+			this.disposeTimeout = undefined
+		}
 	}
 
 	/**
@@ -187,6 +203,10 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
 	 * @param timeoutTime
 	 */
 	startRoundWithCountdown(timeoutTime: number) {
+		// Clear any existing intervals to prevent memory leaks
+		this.clearInterval(this.waitingCountdownInterval)
+		this.clearInterval(this.transitionTimeout)
+
 		this.waitingCountdownInterval = this.clock.setInterval(() => {
 			this.state.waitingCountdownTime -= 1
 		}, 1000)
@@ -303,6 +323,11 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
 	 * Prepare and initiate game restart
 	 */
 	restartGame(scheduledGameId: string, ownerId: number) {
+		// Clear all intervals and timeouts before restarting to prevent memory leaks
+		this.clearInterval(this.waitingCountdownInterval)
+		this.clearInterval(this.gameTimeInterval)
+		this.clearInterval(this.transitionTimeout)
+
 		this.state.round = 0
 		this.state.time = START_COUNTDOWN
 		this.state.cycle = 1
@@ -355,6 +380,8 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
 		if (this.state.words.length > this.state.round) {
 			this.startRoundWithCountdown(MID_GAME_COUNTDOWN)
 		} else {
+			// Clear any existing interval before creating a new one
+			this.clearInterval(this.waitingCountdownInterval)
 			this.waitingCountdownInterval = this.clock.setInterval(() => {
 				this.state.waitingCountdownTime -= 1
 

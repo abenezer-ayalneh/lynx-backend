@@ -9,6 +9,7 @@ import * as basicAuth from 'express-basic-auth'
 import { WinstonModule } from 'nest-winston'
 
 import AppModule from './app.module'
+import LogicService from './logic/logic.service'
 import MultiplayerRoom from './logic/scheduled-games/multiplayer.room'
 import SoloRoom from './logic/scheduled-games/solo.room'
 import ValidationException from './utils/exceptions/validation.exception'
@@ -105,6 +106,12 @@ async function bootstrap() {
 
 	colyseusServer.define('solo', injectDeps(app, SoloRoom), { gameType: 'SOLO' })
 	colyseusServer.define('multiplayer', injectDeps(app, MultiplayerRoom), { gameType: 'MULTIPLAYER' })
+
+	// Set the Colyseus server reference in LogicService for proper shutdown handling
+	const logicService = app.get(LogicService)
+	if (logicService) {
+		logicService.server = colyseusServer
+	}
 
 	// Starts listening for shutdown hooks
 	app.enableShutdownHooks()

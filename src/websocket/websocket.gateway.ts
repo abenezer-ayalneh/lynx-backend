@@ -1,5 +1,5 @@
 import { Logger } from '@nestjs/common'
-import { OnGatewayConnection, OnGatewayInit, WebSocketGateway } from '@nestjs/websockets'
+import { OnGatewayConnection, OnGatewayDisconnect, OnGatewayInit, WebSocketGateway } from '@nestjs/websockets'
 import { Server, Socket } from 'socket.io'
 import { DefaultEventsMap } from 'socket.io/dist/typed-events'
 
@@ -11,7 +11,7 @@ import WebsocketService from './websocket.service'
 		origin: '*',
 	},
 })
-export default class WebsocketGateway implements OnGatewayInit, OnGatewayConnection {
+export default class WebsocketGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
 	logger: Logger
 
 	connectedPlayers: SocketPlayerStatusType | undefined = {}
@@ -65,17 +65,15 @@ export default class WebsocketGateway implements OnGatewayInit, OnGatewayConnect
 			await client.leave(room)
 			this.websocketService.socket.to(room).emit('remove-player', this.returnPlayersInARoomWithPlayerRemoved(client.id))
 		})
+	}
 
-		// Remove the client from the client list and emit remove-player event
-		client.on('disconnect', () => {
-			this.logger.verbose(`Disconnected Device: ${client.id}`)
-			if (this.connectedPlayers[client.id]?.room) {
-				this.websocketService.socket
-					.to(this.connectedPlayers[client.id].room)
-					.emit('remove-player', this.returnPlayersInARoomWithPlayerRemoved(client.id))
-			}
-			delete this.connectedPlayers[client.id]
-		})
+	handleDisconnect(client: Socket<DefaultEventsMap, DefaultEventsMap>) {
+		this.logger.verbose(`Disconnected Device: ${client.id}`)
+		if (this.connectedPlayers[client.id]?.room) {
+			this.websocketService.socket.to(this.connectedPlayers[client.id].room).emit('remove-player', this.returnPlayersInARoomWithPlayerRemoved(client.id))
+		}
+		// Clean up the client from the connected players map to prevent memory leaks
+		delete this.connectedPlayers[client.id]
 	}
 
 	private returnPlayersInTheRoom(room: string) {

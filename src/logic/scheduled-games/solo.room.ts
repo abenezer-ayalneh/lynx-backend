@@ -134,6 +134,11 @@ export default class SoloRoom extends Room<SoloRoomState> {
 	 * @param timeoutTime
 	 */
 	createCountdown(timeoutTime: number) {
+		// Clear any existing interval before creating a new one to prevent memory leaks
+		if (this.waitingCountdownInterval) {
+			this.waitingCountdownInterval.clear()
+		}
+
 		this.waitingCountdownInterval = this.clock.setInterval(() => {
 			this.state.waitingCountdownTime -= 1
 		}, 1000)
@@ -234,6 +239,17 @@ export default class SoloRoom extends Room<SoloRoomState> {
 		}
 	}
 
+	onDispose(): void {
+		this.logger.debug('SOLO ROOM DISPOSED')
+		// Clear all intervals to prevent memory leaks
+		if (this.waitingCountdownInterval) {
+			this.waitingCountdownInterval.clear()
+		}
+		if (this.gameTimeInterval) {
+			this.gameTimeInterval.clear()
+		}
+	}
+
 	/**
 	 * Check if the guessed word matches the currently being played word's key
 	 * @param guess
@@ -254,12 +270,18 @@ export default class SoloRoom extends Room<SoloRoomState> {
 	private stopCurrentRoundOrGame() {
 		this.state.gameState = 'ROUND_END'
 		this.state.waitingCountdownTime = MID_GAME_COUNTDOWN
-		this.gameTimeInterval.clear()
+		if (this.gameTimeInterval) {
+			this.gameTimeInterval.clear()
+		}
 
 		// Game is not done but the current round is
 		if (this.state.words.length > this.state.round) {
 			this.createCountdown(MID_GAME_COUNTDOWN)
 		} else {
+			// Clear any existing interval before creating a new one
+			if (this.waitingCountdownInterval) {
+				this.waitingCountdownInterval.clear()
+			}
 			this.waitingCountdownInterval = this.clock.setInterval(async () => {
 				this.state.waitingCountdownTime -= 1
 
