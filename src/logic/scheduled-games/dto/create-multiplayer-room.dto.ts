@@ -6,7 +6,7 @@ import IsInTheFuture from '../../../utils/validators/is-in-the-future/is-in-the-
 export default class CreateMultiplayerRoomDto {
 	@IsString()
 	@IsNotEmpty()
-	invitation_text: string
+	invitationText: string
 
 	@IsEmail(
 		{},
@@ -27,7 +27,7 @@ export default class CreateMultiplayerRoomDto {
 	@IsString()
 	@IsNotEmpty()
 	@ValidateIf((thisClass: CreateMultiplayerRoomDto) => thisClass.gameScheduleType === ScheduledGameType.FUTURE)
-	start_time?: string
+	startTime?: string
 
 	@IsString()
 	@IsNotEmpty()

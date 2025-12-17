@@ -12,27 +12,27 @@ export default class CreateWordDto {
 	@ToUpperCase()
 	@IsString()
 	@IsNotEmpty()
-	cue_word_1: string
+	cueWord1: string
 
 	@ToUpperCase()
 	@IsString()
 	@IsNotEmpty()
-	cue_word_2: string
+	cueWord2: string
 
 	@ToUpperCase()
 	@IsString()
 	@IsNotEmpty()
-	cue_word_3: string
+	cueWord3: string
 
 	@ToUpperCase()
 	@IsString()
 	@IsNotEmpty()
-	cue_word_4: string
+	cueWord4: string
 
 	@ToUpperCase()
 	@IsString()
 	@IsNotEmpty()
-	cue_word_5: string
+	cueWord5: string
 
 	@IsBoolean()
 	@IsOptional()

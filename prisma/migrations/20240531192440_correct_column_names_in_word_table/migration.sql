@@ -7,11 +7,11 @@
   - You are about to drop the column `word_3` on the `words` table. All the data in the column will be lost.
   - You are about to drop the column `word_4` on the `words` table. All the data in the column will be lost.
   - You are about to drop the column `word_5` on the `words` table. All the data in the column will be lost.
-  - Added the required column `cue_word_1` to the `words` table without a default value. This is not possible if the table is not empty.
-  - Added the required column `cue_word_2` to the `words` table without a default value. This is not possible if the table is not empty.
-  - Added the required column `cue_word_3` to the `words` table without a default value. This is not possible if the table is not empty.
-  - Added the required column `cue_word_4` to the `words` table without a default value. This is not possible if the table is not empty.
-  - Added the required column `cue_word_5` to the `words` table without a default value. This is not possible if the table is not empty.
+  - Added the required column `cueWord1` to the `words` table without a default value. This is not possible if the table is not empty.
+  - Added the required column `cueWord2` to the `words` table without a default value. This is not possible if the table is not empty.
+  - Added the required column `cueWord3` to the `words` table without a default value. This is not possible if the table is not empty.
+  - Added the required column `cueWord4` to the `words` table without a default value. This is not possible if the table is not empty.
+  - Added the required column `cueWord5` to the `words` table without a default value. This is not possible if the table is not empty.
   - Added the required column `key` to the `words` table without a default value. This is not possible if the table is not empty.
 
 */
@@ -22,9 +22,9 @@ DROP COLUMN "word_2",
 DROP COLUMN "word_3",
 DROP COLUMN "word_4",
 DROP COLUMN "word_5",
-ADD COLUMN     "cue_word_1" TEXT NOT NULL,
-ADD COLUMN     "cue_word_2" TEXT NOT NULL,
-ADD COLUMN     "cue_word_3" TEXT NOT NULL,
-ADD COLUMN     "cue_word_4" TEXT NOT NULL,
-ADD COLUMN     "cue_word_5" TEXT NOT NULL,
+ADD COLUMN     "cueWord1" TEXT NOT NULL,
+ADD COLUMN     "cueWord2" TEXT NOT NULL,
+ADD COLUMN     "cueWord3" TEXT NOT NULL,
+ADD COLUMN     "cueWord4" TEXT NOT NULL,
+ADD COLUMN     "cueWord5" TEXT NOT NULL,
 ADD COLUMN     "key" TEXT NOT NULL;

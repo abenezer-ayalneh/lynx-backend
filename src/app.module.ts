@@ -4,11 +4,13 @@ import { Logger, Module } from '@nestjs/common'
 import { ConfigModule, ConfigService } from '@nestjs/config'
 import { APP_FILTER } from '@nestjs/core'
 import { ScheduleModule } from '@nestjs/schedule'
+import { AuthModule } from '@thallesp/nestjs-better-auth'
 
 import WordsModule from './admin/words/words.module'
 import AppController from './app.controller'
 import AppService from './app.service'
-import IamModule from './iam/iam.module'
+import AuthenticationModule from './authentication/authentication.module'
+import { auth } from './lib/auth'
 import { LiveKitModule } from './live-kit/live-kit.module'
 import LogicModule from './logic/logic.module'
 import MailModule from './mail/mail.module'
@@ -29,12 +31,13 @@ import WebsocketModule from './websocket/websocket.module'
 				stores: [createKeyv(config.get<string>('REDIS_URL'))],
 			}),
 		}),
-		WebsocketModule,
-		IamModule,
+		AuthModule.forRoot({ auth }), // Better-auth's module
+		AuthenticationModule, // Local authentication module
 		PrismaModule,
 		LogicModule,
 		MailModule,
 		WordsModule,
+		WebsocketModule,
 		LiveKitModule,
 	],
 	controllers: [AppController],

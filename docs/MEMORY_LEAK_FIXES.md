@@ -68,7 +68,7 @@ DATABASE_URL="postgresql://user:password@host:port/database?connection_limit=10&
 **Fix:**
 - Implemented `OnGatewayDisconnect` interface
 - Extracted disconnect logic into a separate `handleDisconnect()` method for better organization
-- Ensured proper cleanup of `connectedPlayers` map on disconnect
+- Ensured proper cleanup of `connectedUsers` map on disconnect
 
 ## Additional Recommendations
 
