@@ -2,11 +2,11 @@ import { tz } from '@date-fns/tz/tz'
 import { Injectable, Logger } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { ScheduledGame } from '@prisma/client'
+import { UserSession } from '@thallesp/nestjs-better-auth'
 import { matchMaker } from 'colyseus'
 import { format, parseISO } from 'date-fns'
 
 import { SCHEDULED_GAME_REMINDER_MINUTES } from '../../commons/constants/email.constant'
-import { ActivePlayerData } from '../../iam/types/active-player-data.type'
 import MailService from '../../mail/mail.service'
 import PrismaService from '../../prisma/prisma.service'
 import TIMEZONES from './constants/timezones.constants'
@@ -24,12 +24,12 @@ export default class ScheduledGamesService {
 		this.logger = new Logger('ScheduledGamesService')
 	}
 
-	async create(activePlayerData: ActivePlayerData, createRoomDto: CreateMultiplayerRoomDto) {
-		const emailsToSendInvitationTo = [...createRoomDto.emails, activePlayerData.email]
+	async create(session: UserSession, createRoomDto: CreateMultiplayerRoomDto) {
+		const emailsToSendInvitationTo = [...createRoomDto.emails, session.user.email]
 
 		const startTimeIsoWithTimezone =
-			createRoomDto.start_time && createRoomDto.timezone
-				? parseISO(createRoomDto.start_time, {
+			createRoomDto.startTime && createRoomDto.timezone
+				? parseISO(createRoomDto.startTime, {
 						in: tz(createRoomDto.timezone),
 					})
 				: new Date()
@@ -38,14 +38,14 @@ export default class ScheduledGamesService {
 
 		const scheduledGame = await this.prismaService.scheduledGame.create({
 			data: {
-				invitation_text: createRoomDto.invitation_text,
-				invited_emails: emailsToSendInvitationTo,
-				room_id: room.roomId,
-				start_time: startTimeIsoWithTimezone.toISOString(),
+				invitationText: createRoomDto.invitationText,
+				invitedEmails: emailsToSendInvitationTo,
+				roomId: room.roomId,
+				startTime: startTimeIsoWithTimezone.toISOString(),
 				type: createRoomDto.gameScheduleType,
-				Owner: {
+				owner: {
 					connect: {
-						id: activePlayerData.sub,
+						id: session.user.id,
 					},
 				},
 			},
@@ -59,7 +59,7 @@ export default class ScheduledGamesService {
 	getById(gameId: string) {
 		return this.prismaService.scheduledGame.findUnique({
 			where: { id: gameId },
-			select: { id: true, room_id: true, start_time: true, type: true, Owner: { select: { id: true } } },
+			select: { id: true, roomId: true, startTime: true, type: true, owner: { select: { id: true } } },
 		})
 	}
 
@@ -69,7 +69,7 @@ export default class ScheduledGamesService {
 			message: string
 		}>[] = []
 
-		const emailsToInvite = scheduledGame.invited_emails
+		const emailsToInvite = scheduledGame.invitedEmails
 
 		if (emailsToInvite.length > 0) {
 			emailsToInvite.forEach((email) => {
@@ -80,9 +80,9 @@ export default class ScheduledGamesService {
 						subject: 'Lynx Game Invitation',
 						template: './game-invitation',
 						context: {
-							invitationText: scheduledGame.invitation_text,
-							date: format(scheduledGame.start_time, 'yyyy-MM-dd'),
-							time: format(scheduledGame.start_time, 'hh:mm aa'),
+							invitationText: scheduledGame.invitationText,
+							date: format(scheduledGame.startTime, 'yyyy-MM-dd'),
+							time: format(scheduledGame.startTime, 'hh:mm aa'),
 							timezone: TIMEZONES[timeZone]?.name ?? 'UTC',
 							reminderMinutes: SCHEDULED_GAME_REMINDER_MINUTES,
 							url: `${this.configService.get<string>('FRONTEND_APP_URL')}/game/scheduled/${scheduledGame.id}`,

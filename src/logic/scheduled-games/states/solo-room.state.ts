@@ -17,7 +17,7 @@ export default class SoloRoomState extends Schema {
 
 	@type(Word) word: Word | undefined
 
-	@type('number') numberOfPlayers: number
+	@type('number') numberOfUsers: number
 
 	@type('number') waitingCountdownTime: number
 
@@ -32,7 +32,7 @@ export default class SoloRoomState extends Schema {
 
 	words: Word[]
 
-	playerId: number
+	userId: string
 
 	constructor({ word, guessing, round, totalRound, time, cycle, waitingCountdownTime, words, gameState, winner, score, totalScore }: RoomProps) {
 		super()

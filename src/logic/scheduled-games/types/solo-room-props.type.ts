@@ -19,5 +19,5 @@ export type RoomProps = {
 export type RoomCreateProps = {
 	gameId?: number
 	gameType?: string
-	playerId?: number
+	userId?: string
 }

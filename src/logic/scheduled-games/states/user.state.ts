@@ -1,6 +1,6 @@
 import { Schema, type } from '@colyseus/schema'
 
-export default class Player extends Schema {
+export default class User extends Schema {
 	@type('string') id: string
 
 	@type('string') name: string

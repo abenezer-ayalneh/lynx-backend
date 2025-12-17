@@ -1,10 +1,9 @@
 import { Controller, Get } from '@nestjs/common'
+import { AllowAnonymous } from '@thallesp/nestjs-better-auth'
 
 import AppService from './app.service'
-import { Auth } from './iam/authentication/decorators/auth.decorator'
-import AuthType from './iam/authentication/enums/auth-type.enum'
 
-@Auth(AuthType.None)
+@AllowAnonymous()
 @Controller()
 export default class AppController {
 	constructor(private readonly appService: AppService) {}

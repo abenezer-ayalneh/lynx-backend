@@ -19,77 +19,128 @@ enum GameType {
 }
 
 model Word {
-  id         Int       @id @default(autoincrement())
-  key        String
-  cue_word_1 String
-  cue_word_2 String
-  cue_word_3 String
-  cue_word_4 String
-  cue_word_5 String
-  status     Boolean   @default(true)
-  created_at DateTime  @default(now())
-  updated_at DateTime? @updatedAt()
-  deleted_at DateTime?
-
-  Games Game[]
+  id        Int       @id @default(autoincrement())
+  key       String
+  cueWord1  String
+  cueWord2  String
+  cueWord3  String
+  cueWord4  String
+  cueWord5  String
+  status    Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime? @updatedAt
+  deletedAt DateTime?
+  games     Game[]
 
   @@map("words")
 }
 
 model Game {
-  id                Int       @id @default(autoincrement())
-  type              GameType
-  status            Boolean   @default(true)
-  owner_id          Int
-  scheduled_game_id String?
-  created_at        DateTime  @default(now())
-  updated_at        DateTime? @updatedAt()
-  deleted_at        DateTime?
-
-  Owner         Player         @relation(fields: [owner_id], references: [id])
-  ScheduledGame ScheduledGame? @relation(fields: [scheduled_game_id], references: [id])
-  Words         Word[]
+  id              Int            @id @default(autoincrement())
+  type            GameType
+  status          Boolean        @default(true)
+  ownerId         String
+  scheduledGameId String?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime?      @updatedAt
+  deletedAt       DateTime?
+  owner           User           @relation(fields: [ownerId], references: [id])
+  scheduledGame   ScheduledGame? @relation(fields: [scheduledGameId], references: [id])
+  words           Word[]
 
   @@map("games")
 }
 
-model Player {
-  id         Int       @id @default(autoincrement())
-  name       String
-  email      String    @unique()
-  password   String
-  status     Boolean   @default(true)
-  role       Role      @default(PLAYER)
-  score      Int       @default(0)
-  created_at DateTime  @default(now())
-  updated_at DateTime? @updatedAt()
-  deleted_at DateTime?
-
-  Games      Game[]
-  OwnedRooms ScheduledGame[]
-
-  @@map("players")
-}
-
 model ScheduledGame {
-  id              String              @id @default(uuid(7))
-  invitation_text String
-  invited_emails  String[]
-  room_id         String              @unique()
-  type            ScheduledGameType
-  start_time      DateTime
-  max_players     Int                 @default(8)
-  rounds          Int                 @default(5)
-  status          ScheduledGameStatus @default(PENDING)
-  created_by      Int
-  created_at      DateTime            @default(now())
-  updated_at      DateTime?           @updatedAt()
-  deleted_at      DateTime?
-
-  Owner Player @relation(fields: [created_by], references: [id])
-  Games Game[]
+  id             String              @id @default(uuid(7))
+  invitationText String
+  invitedEmails  String[]
+  roomId         String              @unique
+  type           ScheduledGameType
+  startTime      DateTime
+  maxUsers       Int                 @default(8)
+  rounds         Int                 @default(5)
+  status         ScheduledGameStatus @default(PENDING)
+  createdBy      String
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime?           @updatedAt
+  deletedAt      DateTime?
+  owner          User                @relation(fields: [createdBy], references: [id])
+  games          Game[]
 
   @@map("scheduled_games")
+}
+
+model User {
+  id            String          @id
+  name          String
+  email         String
+  emailVerified Boolean         @default(false)
+  score         Int             @default(0)
+  image         String?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  role          String?
+  banned        Boolean?        @default(false)
+  banReason     String?
+  banExpires    DateTime?
+  sessions      Session[]
+  accounts      Account[]
+  games         Game[]
+  ownedRooms    ScheduledGame[]
+
+  @@unique([email])
+  @@map("user")
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  impersonatedBy String?
+
+  @@unique([token])
+  @@index([userId])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([userId])
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+  @@map("verification")
 }
 
 enum ScheduledGameStatus {
@@ -101,9 +152,4 @@ enum ScheduledGameStatus {
 enum ScheduledGameType {
   INSTANT
   FUTURE
-}
-
-enum Role {
-  ADMIN
-  PLAYER
 }

@@ -62,18 +62,19 @@ async function bootstrap() {
 		// credentials in
 		challenge: true,
 	})
-
 	app.use('/monitor', basicAuthMiddleware, monitor())
 
 	// Config service to access .env file
 	const configService = app.get(ConfigService)
 
 	// Logger to log stuff into console
-	const logger = new Logger()
+	const logger = new Logger('App Bootstrap')
 
 	// Enable CORS from allowed origins listed in .env
 	app.enableCors({
 		origin: configService.get<string>('CORS_ALLOWED_ORIGINS') ? configService.get<string>('CORS_ALLOWED_ORIGINS').split(',') : false,
+		credentials: true,
+		exposedHeaders: ['set-auth-token'], // If Betterauth needs this header then you must specify it here.
 	})
 
 	// Add an 'api' prefix to all controller routes
