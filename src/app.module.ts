@@ -9,7 +9,7 @@ import { AuthModule } from '@thallesp/nestjs-better-auth'
 import WordsModule from './admin/words/words.module'
 import AppController from './app.controller'
 import AppService from './app.service'
-import AuthenticationModule from './authentication/authentication.module'
+import { AuthModule as LocalAuthModule } from './auth/auth.module'
 import { auth } from './lib/auth'
 import { LiveKitModule } from './live-kit/live-kit.module'
 import LogicModule from './logic/logic.module'
@@ -32,7 +32,7 @@ import WebsocketModule from './websocket/websocket.module'
 			}),
 		}),
 		AuthModule.forRoot({ auth }), // Better-auth's module
-		AuthenticationModule, // Local authentication module
+		LocalAuthModule, // Local auth module
 		PrismaModule,
 		LogicModule,
 		MailModule,
