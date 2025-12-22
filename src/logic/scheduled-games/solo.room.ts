@@ -1,5 +1,8 @@
+import { IncomingMessage } from 'node:http'
+
 import { Injectable, Logger } from '@nestjs/common'
-import { JwtService } from '@nestjs/jwt'
+import { UserSession } from '@thallesp/nestjs-better-auth'
+import { fromNodeHeaders } from 'better-auth/node'
 import { Client, Delayed, Room } from 'colyseus'
 
 import {
@@ -10,6 +13,7 @@ import {
 	START_COUNTDOWN,
 	THIRD_CYCLE_TIME,
 } from '../../commons/constants/game-time.constant'
+import { auth } from '../../lib/auth'
 import PrismaService from '../../prisma/prisma.service'
 import { GUESS, WRONG_GUESS } from './constants/message.constant'
 import { FIRST_CYCLE_SCORE, FOURTH_CYCLE_SCORE, SECOND_CYCLE_SCORE, THIRD_CYCLE_SCORE } from './constants/score.constant'
@@ -36,18 +40,22 @@ export default class SoloRoom extends Room<SoloRoomState> {
 	/**
 	 * Validate client auth token before joining/creating the room
 	 * @param token
+	 * @param req
 	 */
-	static async onAuth(token: string) {
+	static async onAuth(token: string, req: IncomingMessage) {
 		if (!token) {
 			return false
 		}
 
-		const jwtService = new JwtService()
-		return await jwtService.verifyAsync<object>(token, {
-			secret: process.env.JWT_SECRET,
-			audience: process.env.JWT_TOKEN_AUDIENCE,
-			issuer: process.env.JWT_TOKEN_ISSUER,
-		})
+		const session = await auth.api.getSession({ headers: fromNodeHeaders(req.headers) })
+
+		return session.user
+		// const jwtService = new JwtService()
+		// return await jwtService.verifyAsync<object>(token, {
+		// 	secret: process.env.JWT_SECRET,
+		// 	audience: process.env.JWT_TOKEN_AUDIENCE,
+		// 	issuer: process.env.JWT_TOKEN_ISSUER,
+		// })
 	}
 
 	/**
@@ -229,13 +237,9 @@ export default class SoloRoom extends Room<SoloRoomState> {
 	}
 
 	// When client successfully join the room
-	async onJoin(client: Client, options: any, auth: { sub: string }) {
-		const user = await this.prismaService.user.findUnique({
-			where: { id: auth.sub },
-		})
-
-		if (user) {
-			this.state.userId = user.id
+	onJoin(client: Client, options: any, auth: UserSession) {
+		if (auth.user?.id) {
+			this.state.userId = auth.user.id
 		}
 	}
 

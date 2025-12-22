@@ -3,8 +3,8 @@ import { ArraySchema, MapSchema, Schema, type } from '@colyseus/schema'
 import { MAX_ROUNDS_PER_GAME_LIMIT } from '../../../commons/constants/common.constant'
 import { GamePlayStatus, GameState } from '../enums/multiplayer-room.enum'
 import { Score as WinnerType } from '../types/winner.type'
+import Player from './player.state'
 import Score from './score.state'
-import User from './user.state'
 import Word from './word.state'
 
 export default class MultiplayerRoomState extends Schema {
@@ -14,7 +14,7 @@ export default class MultiplayerRoomState extends Schema {
 	//
 	// @type('string') startTime: string // The scheduled game's start time.
 
-	@type([User]) users = new ArraySchema<User>() // Users currently available in the game room.
+	@type([Player]) players = new ArraySchema<Player>() // Players currently available in the game room.
 
 	@type('number') round: number // Currently being played round.
 
@@ -34,11 +34,11 @@ export default class MultiplayerRoomState extends Schema {
 
 	@type(Score) winner: Score | null // The winner.
 
-	@type({ map: 'number' }) score = new MapSchema<number>() // Scores of the users (key is ID and value is score).
+	@type({ map: 'number' }) score = new MapSchema<number>() // Scores of the players (key is ID and value is score).
 
-	@type({ map: Score }) totalScore = new MapSchema<Score>() // Total scores of the users (key is user session ID, and value is total score).
+	@type({ map: Score }) totalScore = new MapSchema<Score>() // Total scores of the players (key is player session ID, and value is total score).
 
-	@type({ map: Score }) sessionScore = new MapSchema<Score>() // Total score summation of the users within one game session (key is user session ID, and value is total score).
+	@type({ map: Score }) sessionScore = new MapSchema<Score>() // Total score summation of the players within one game session (key is player session ID, and value is total score).
 
 	words: Word[] // All the words selected for this game.
 
@@ -89,27 +89,27 @@ export default class MultiplayerRoomState extends Schema {
 	}
 
 	/**
-	 * Removes a user from the user list, as well as associated scores.
+	 * Removes a player from the player list, as well as associated scores.
 	 *
-	 * @param {string} sessionId - The unique identifier for the user session to remove.
+	 * @param {string} sessionId - The unique identifier for the player session to remove.
 	 * @return {void} This method does not return a value.
 	 */
-	removeUser(sessionId: string): void {
-		const indexToRemove = this.users.findIndex((user) => user.id === sessionId)
+	removePlayer(sessionId: string): void {
+		const indexToRemove = this.players.findIndex((player) => player.id === sessionId)
 
 		if (indexToRemove >= 0) {
 			this.score.delete(sessionId)
 			this.totalScore.delete(sessionId)
 			this.sessionScore.delete(sessionId)
-			this.users.splice(indexToRemove, 1)
+			this.players.splice(indexToRemove, 1)
 		}
 	}
 
 	/**
-	 * Records a user's vote for restarting the game.
+	 * Records a player's vote for restarting the game.
 	 *
 	 * @param sessionId
-	 * @param {boolean} vote - A boolean indicating the user's vote.
+	 * @param {boolean} vote - A boolean indicating the player's vote.
 	 *                         Pass `true` to vote for a restart, or `false` against it.
 	 * @return {void} - Does not return a value.
 	 */

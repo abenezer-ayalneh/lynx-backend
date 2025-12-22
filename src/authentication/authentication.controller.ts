@@ -1,11 +1,11 @@
-import { Body, Controller, HttpCode, HttpStatus, Logger, Post } from '@nestjs/common'
-import { AllowAnonymous } from '@thallesp/nestjs-better-auth'
+import { Body, Controller, Get, HttpCode, HttpStatus, Logger, Post, Req } from '@nestjs/common'
+import { AllowAnonymous, Session, UserSession } from '@thallesp/nestjs-better-auth'
+import type { Request as ExpressRequest } from 'express'
 
 import AuthenticationService from './authentication.service'
 import SignInDto from './dto/sign-in.dto'
 import SignUpDto from './dto/sign-up.dto'
 
-@AllowAnonymous()
 @Controller('authentication')
 export default class AuthenticationController {
 	logger: Logger
@@ -13,15 +13,27 @@ export default class AuthenticationController {
 		this.logger = new Logger('AuthenticationController')
 	}
 
+	@AllowAnonymous()
 	@Post('sign-up/email')
 	signUpWithEmailAndPassword(@Body() signUpDto: SignUpDto) {
 		return this.authService.signUpWithEmailAndPassword(signUpDto)
 	}
 
+	@AllowAnonymous()
 	@HttpCode(HttpStatus.OK)
 	@Post('sign-in/email')
 	signInWithEmailAndPassword(@Body() signInDto: SignInDto) {
 		return this.authService.signInWithEmailAndPassword(signInDto)
+	}
+
+	@Post('sign-out')
+	signOut(@Req() request: ExpressRequest) {
+		return this.authService.signOut(request.headers)
+	}
+
+	@Get('get-session')
+	getSession(@Session() session: UserSession) {
+		return session
 	}
 
 	// @HttpCode(HttpStatus.OK)

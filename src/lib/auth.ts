@@ -1,19 +1,25 @@
 import { PrismaClient } from '@prisma/client'
 import { betterAuth } from 'better-auth'
 import { prismaAdapter } from 'better-auth/adapters/prisma'
-import { admin } from 'better-auth/plugins'
+import { admin, bearer } from 'better-auth/plugins'
 
 const prisma = new PrismaClient()
 export const auth = betterAuth({
 	database: prismaAdapter(prisma, {
 		provider: 'postgresql',
 	}),
-	trustedOrigins: ['http://localhost:4200'],
-	plugins: [admin()],
+	trustedOrigins: process.env.CORS_ALLOWED_ORIGINS.split(','),
+	plugins: [admin(), bearer()],
 	emailAndPassword: {
 		enabled: true,
 	},
-	// socialProviders: {
-	// 	google: {}
-	// },
+	user: {
+		additionalFields: {
+			score: {
+				type: 'number',
+				required: true,
+				defaultValue: 0,
+			},
+		},
+	},
 })

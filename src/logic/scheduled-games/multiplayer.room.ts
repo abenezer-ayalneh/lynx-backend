@@ -19,8 +19,8 @@ import { FIRST_CYCLE_SCORE, FOURTH_CYCLE_SCORE, SECOND_CYCLE_SCORE, THIRD_CYCLE_
 import { GamePlayStatus, GameState } from './enums/multiplayer-room.enum'
 import ScheduledGamesService from './scheduled-games.service'
 import MultiplayerRoomState from './states/multiplayer-room.state'
+import Player from './states/player.state'
 import Score from './states/score.state'
-import User from './states/user.state'
 import Word from './states/word.state'
 import { MultiplayerRoomJoinDto } from './types/multiplayer-room-props.type'
 
@@ -92,7 +92,7 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
 		this.disposeTimeout = setTimeout(() => {
 			if (this.state.gameState === GameState.LOBBY) {
 				// Game has not started yet, no users in the lobby, initial timeout has elapsed.
-				if (this.state.users.length === 0) {
+				if (this.state.players.length === 0) {
 					this.disconnect()
 						.then(() => this.logger.debug('Room disposed due to inactivity.'))
 						.catch((error) => this.logger.error(error))
@@ -130,8 +130,8 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
 		)
 
 		// Add unique users into the room's 'users' state
-		if (!this.state.users.some((joinedUser) => joinedUser.id === client.sessionId)) {
-			this.state.users.push(new User(client.sessionId, auth.userName))
+		if (!this.state.players.some((joinedUser) => joinedUser.id === client.sessionId)) {
+			this.state.players.push(new Player(client.sessionId, auth.userName))
 		}
 
 		logger.debug(`User joined with sessionId: ${client.sessionId}`)
@@ -144,7 +144,7 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
 	onLeave(client: Client) {
 		// If the game has been played and when the last user leaves the room, wait for `ON_LEAVE_ROOM_AUTO_DISPOSE_TIMEOUT_SECONDS` number of seconds
 		// and then dispose the game room.
-		if (this.state.gameState !== GameState.LOBBY && this.state.users.length === 1) {
+		if (this.state.gameState !== GameState.LOBBY && this.state.players.length === 1) {
 			// Clear any existing dispose timeout to prevent memory leaks
 			if (this.disposeTimeout) {
 				clearTimeout(this.disposeTimeout)
@@ -157,7 +157,7 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
 			this.logger.debug(`Room will be disposed in ${ON_LEAVE_ROOM_AUTO_DISPOSE_TIMEOUT_MILLISECONDS} milliseconds after the last user left.`)
 		}
 
-		this.state.removeUser(client.sessionId)
+		this.state.removePlayer(client.sessionId)
 	}
 
 	onDispose(): void {
@@ -357,7 +357,7 @@ export default class MultiplayerRoom extends Room<MultiplayerRoomState> {
 		if (isWinner) {
 			this.state.setWinner({
 				id: client.sessionId,
-				name: this.state.users.find((user) => user.id === client.sessionId).name,
+				name: this.state.players.find((user) => user.id === client.sessionId).name,
 				score: this.getUserScore(),
 			})
 			this.addScoreToWinner(client.sessionId)
