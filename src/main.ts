@@ -4,11 +4,14 @@ import { WebSocketTransport } from '@colyseus/ws-transport'
 import { INestApplication, Logger, ValidationError, ValidationPipe } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { NestFactory } from '@nestjs/core'
+import { NestExpressApplication } from '@nestjs/platform-express'
+import { toNodeHandler } from 'better-auth/node'
 import { logger, Room, Server } from 'colyseus'
 import * as basicAuth from 'express-basic-auth'
 import { WinstonModule } from 'nest-winston'
 
 import AppModule from './app.module'
+import { auth } from './lib/auth'
 import LogicService from './logic/logic.service'
 import MultiplayerRoom from './logic/scheduled-games/multiplayer.room'
 import SoloRoom from './logic/scheduled-games/solo.room'
@@ -45,8 +48,9 @@ function injectDeps<T extends { new (...args: any[]): Room }>(app: INestApplicat
 }
 
 async function bootstrap() {
-	const app = await NestFactory.create(AppModule, {
+	const app = await NestFactory.create<NestExpressApplication>(AppModule, {
 		logger: WinstonModule.createLogger({ instance: winstonLoggerInstance }),
+		bodyParser: false,
 	})
 
 	// Colyseus playground
@@ -77,6 +81,15 @@ async function bootstrap() {
 		exposedHeaders: ['set-auth-token'], // If Betterauth needs this header then you must specify it here.
 	})
 
+	// For better-auth to work. This is a workaround because the routes fail with 404 in NestJS.
+	const betterAuthRouteHandler = toNodeHandler(auth)
+	app.getHttpAdapter()
+		.getInstance()
+		.all(/^\/api\/auth\/.*$/, (req, res) => {
+			return betterAuthRouteHandler(req, res)
+		})
+	// express.all(/^\/api\/auth\/.*$/, toNodeHandler(auth))
+
 	// Add an 'api' prefix to all controller routes
 	app.setGlobalPrefix('api')
 
@@ -99,7 +112,6 @@ async function bootstrap() {
 	// Colyseus setup
 	const colyseusServer = new Server({
 		transport: new WebSocketTransport({
-			// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 			server: app.getHttpServer(),
 			maxPayload: 1024 * 1024, // 1MB Max Payload
 		}),
