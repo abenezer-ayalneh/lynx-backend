@@ -1,5 +1,6 @@
 export default interface FilterResponseInterface {
 	statusCode: number
-	error: string
-	data: string | object
+	errorType: string
+	message: string
+	details?: string | object
 }

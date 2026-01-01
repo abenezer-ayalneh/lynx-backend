@@ -42,6 +42,7 @@
     "@nestjs/websockets": "^11.1.2",
     "@prisma/client": "^6.8.2",
     "bcrypt": "^6.0.0",
+    "better-auth": "^1.4.10",
     "bull": "^4.16.5",
     "cache-manager": "^6.4.3",
     "cache-manager-redis-yet": "^5.1.5",
