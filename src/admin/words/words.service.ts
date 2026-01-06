@@ -17,7 +17,7 @@ export default class WordsService {
 	}
 
 	findAll(findAllWordsDto: FindAllWordsDto) {
-		let orderBy: Record<string, 'asc' | 'desc'>[] = [{ id: 'desc' }]
+		let orderBy: Record<string, 'asc' | 'desc'>[] = [{ id: 'asc' }]
 
 		if (findAllWordsDto.sort) {
 			const tempOrderBy: Record<string, 'asc' | 'desc'>[] = []
