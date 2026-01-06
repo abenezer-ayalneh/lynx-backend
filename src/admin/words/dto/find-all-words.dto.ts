@@ -14,4 +14,9 @@ export default class FindAllWordsDto {
 	@IsString()
 	@IsOptional()
 	sort?: string
+
+	@IsNumber()
+	@Type(() => Number)
+	@IsOptional()
+	offset?: number
 }

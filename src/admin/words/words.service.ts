@@ -17,22 +17,38 @@ export default class WordsService {
 	}
 
 	findAll(findAllWordsDto: FindAllWordsDto) {
-		// let orderBy: Record<string, 'asc' | 'desc'>[] = [{ id: 'desc' }]
-		//
-		// if (findAllWordsDto.sort) {
-		//   const tempOrderBy: Record<string, 'asc' | 'desc'>[] = []
-		//   findAllWordsDto.sort.split(',').forEach((sortString) => {
-		//     const [key, order] = sortString.split(':')
-		//     tempOrderBy.push({ [key]: order as 'asc' | 'desc' })
-		//   })
-		//
-		//   orderBy = tempOrderBy
-		// }
+		let orderBy: Record<string, 'asc' | 'desc'>[] = [{ id: 'desc' }]
+
+		if (findAllWordsDto.sort) {
+			const tempOrderBy: Record<string, 'asc' | 'desc'>[] = []
+			findAllWordsDto.sort.split(',').forEach((sortString) => {
+				const [key, order] = sortString.split(':')
+				tempOrderBy.push({ [key]: order as 'asc' | 'desc' })
+			})
+
+			orderBy = tempOrderBy
+		}
+
+		// When sorting is active, use offset-based pagination
+		// When sorting is inactive, use cursor-based pagination
+		if (findAllWordsDto.sort) {
+			return this.prismaService.word.findMany({
+				take: WORDS_PER_INFINITY_LOAD,
+				skip: findAllWordsDto.offset ?? 0,
+				orderBy,
+				where: findAllWordsDto.searchQuery
+					? {
+							OR: [{ key: { contains: findAllWordsDto.searchQuery, mode: 'insensitive' } }],
+						}
+					: undefined,
+			})
+		}
 
 		return this.prismaService.word.findMany({
 			take: WORDS_PER_INFINITY_LOAD,
 			skip: findAllWordsDto.lastWordId ? 1 : undefined,
 			cursor: findAllWordsDto.lastWordId ? { id: findAllWordsDto.lastWordId } : undefined,
+			orderBy,
 			where: findAllWordsDto.searchQuery
 				? {
 						OR: [{ key: { contains: findAllWordsDto.searchQuery, mode: 'insensitive' } }],
