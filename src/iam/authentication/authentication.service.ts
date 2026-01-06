@@ -40,7 +40,7 @@ export default class AuthenticationService {
 		} catch (e) {
 			if (e instanceof PrismaClientKnownRequestError) {
 				if (e.code === 'P2002') {
-					throw new ConflictException()
+					throw new ConflictException('User with this email already exists. Please try another.')
 				}
 			}
 			throw e
