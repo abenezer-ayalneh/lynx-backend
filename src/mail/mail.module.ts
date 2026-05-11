@@ -16,9 +16,7 @@ import MailConsumer from './queue/mail.consumer'
 			inject: [ConfigService],
 			name: MAIL_QUEUE_NAME,
 			useFactory: (configService: ConfigService) => ({
-				redis: {
-					port: configService.get('REDIS_PORT'),
-				},
+				redis: configService.get<string>('REDIS_URL'),
 			}),
 		}),
 		MailerModule.forRootAsync({
