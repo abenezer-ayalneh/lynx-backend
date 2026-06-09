@@ -4,7 +4,7 @@
 -- After running this, run `prisma migrate deploy` to apply the schema changes.
 --
 -- Prerequisites: Back up the database first!
---   pg_dump -U <user> -d lynx > lynx_backup_$(date +%Y%m%d).sql
+--   docker exec lynx-postgres sh -c 'pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB"' > ~/lynx_backup_$(date +%Y%m%d).sql
 
 BEGIN;
 
