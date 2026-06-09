@@ -4,14 +4,19 @@ import { WebSocketTransport } from '@colyseus/ws-transport'
 import { INestApplication, Logger, ValidationError, ValidationPipe } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { NestFactory } from '@nestjs/core'
+import { NestExpressApplication } from '@nestjs/platform-express'
+import { toNodeHandler } from 'better-auth/node'
 import { logger, Room, Server } from 'colyseus'
+import * as express from 'express'
 import * as basicAuth from 'express-basic-auth'
 import { WinstonModule } from 'nest-winston'
 
 import AppModule from './app.module'
+import { auth, registerMailSender } from './lib/auth'
 import LogicService from './logic/logic.service'
 import MultiplayerRoom from './logic/scheduled-games/multiplayer.room'
 import SoloRoom from './logic/scheduled-games/solo.room'
+import MailService from './mail/mail.service'
 import ValidationException from './utils/exceptions/validation.exception'
 import winstonLoggerInstance from './utils/log/winston.log'
 
@@ -45,8 +50,9 @@ function injectDeps<T extends { new (...args: any[]): Room }>(app: INestApplicat
 }
 
 async function bootstrap() {
-	const app = await NestFactory.create(AppModule, {
+	const app = await NestFactory.create<NestExpressApplication>(AppModule, {
 		logger: WinstonModule.createLogger({ instance: winstonLoggerInstance }),
+		bodyParser: false,
 	})
 
 	// Colyseus playground
@@ -62,19 +68,36 @@ async function bootstrap() {
 		// credentials in
 		challenge: true,
 	})
-
 	app.use('/monitor', basicAuthMiddleware, monitor())
+
+	// Register mail sender for better-auth password reset emails
+	const mailService = app.get(MailService)
+	registerMailSender((dto) => mailService.sendMail(dto))
 
 	// Config service to access .env file
 	const configService = app.get(ConfigService)
 
 	// Logger to log stuff into console
-	const logger = new Logger()
+	const logger = new Logger('App Bootstrap')
 
 	// Enable CORS from allowed origins listed in .env
 	app.enableCors({
 		origin: configService.get<string>('CORS_ALLOWED_ORIGINS') ? configService.get<string>('CORS_ALLOWED_ORIGINS').split(',') : false,
+		credentials: true,
+		exposedHeaders: ['set-auth-token'], // If Betterauth needs this header then you must specify it here.
 	})
+
+	// Better Auth handles its own body parsing — register before Express json/urlencoded
+	const betterAuthRouteHandler = toNodeHandler(auth)
+	app.getHttpAdapter()
+		.getInstance()
+		.all(/^\/api\/auth\/.*$/, (req: express.Request, res: express.Response) => {
+			return betterAuthRouteHandler(req, res)
+		})
+
+	// Re-enable body parsing for all other routes (disabled globally for Better Auth compatibility)
+	app.use(express.json())
+	app.use(express.urlencoded({ extended: true }))
 
 	// Add an 'api' prefix to all controller routes
 	app.setGlobalPrefix('api')
@@ -98,7 +121,6 @@ async function bootstrap() {
 	// Colyseus setup
 	const colyseusServer = new Server({
 		transport: new WebSocketTransport({
-			// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 			server: app.getHttpServer(),
 			maxPayload: 1024 * 1024, // 1MB Max Payload
 		}),

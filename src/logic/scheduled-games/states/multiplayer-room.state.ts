@@ -10,7 +10,7 @@ import Word from './word.state'
 export default class MultiplayerRoomState extends Schema {
 	// @type('number') gameId: number // The scheduled game's ID.
 	//
-	// @type('number') ownerId: number // The ID of the player who created this game.
+	// @type('number') ownerId: number // The ID of the user who created this game.
 	//
 	// @type('string') startTime: string // The scheduled game's start time.
 
@@ -89,9 +89,9 @@ export default class MultiplayerRoomState extends Schema {
 	}
 
 	/**
-	 * Removes a user from the player list, as well as associated scores.
+	 * Removes a player from the player list, as well as associated scores.
 	 *
-	 * @param {string} sessionId - The unique identifier for the user session to remove.
+	 * @param {string} sessionId - The unique identifier for the player session to remove.
 	 * @return {void} This method does not return a value.
 	 */
 	removePlayer(sessionId: string): void {
