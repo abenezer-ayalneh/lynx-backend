@@ -1,10 +1,12 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@nestjs/common'
+import { Roles } from '@thallesp/nestjs-better-auth'
 
 import CreateWordDto from './dto/create-word.dto'
 import FindAllWordsDto from './dto/find-all-words.dto'
 import UpdateWordDto from './dto/update-word.dto'
 import WordsService from './words.service'
 
+@Roles(['admin'])
 @Controller('words')
 export default class WordsController {
 	constructor(private readonly wordsService: WordsService) {}

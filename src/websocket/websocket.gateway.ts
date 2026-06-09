@@ -3,7 +3,7 @@ import { OnGatewayConnection, OnGatewayDisconnect, OnGatewayInit, WebSocketGatew
 import { Server, Socket } from 'socket.io'
 import { DefaultEventsMap } from 'socket.io/dist/typed-events'
 
-import { PlayerStatusType, SocketPlayerStatusType } from './types/socket.type'
+import { SocketUserStatusType, UserStatusType } from './types/socket.type'
 import WebsocketService from './websocket.service'
 
 @WebSocketGateway({
@@ -14,7 +14,7 @@ import WebsocketService from './websocket.service'
 export default class WebsocketGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
 	logger: Logger
 
-	connectedPlayers: SocketPlayerStatusType | undefined = {}
+	connectedUsers: SocketUserStatusType | undefined = {}
 
 	constructor(private readonly websocketService: WebsocketService) {
 		this.logger = new Logger('WebsocketGateway')
@@ -26,7 +26,7 @@ export default class WebsocketGateway implements OnGatewayInit, OnGatewayConnect
 
 	handleConnection(client: Socket<DefaultEventsMap, DefaultEventsMap>) {
 		this.logger.verbose(`Connected Device: ${client.id}`)
-		this.connectedPlayers[client.id] = {
+		this.connectedUsers[client.id] = {
 			username: '',
 			mute: false,
 			microphone: false,
@@ -37,65 +37,65 @@ export default class WebsocketGateway implements OnGatewayInit, OnGatewayConnect
 			const splitData = data.split(';')
 			splitData[0] = 'data:audio/ogg;'
 			const newData = splitData[0] + splitData[1]
-			const room = this.connectedPlayers[client.id]?.room
+			const room = this.connectedUsers[client.id]?.room
 
 			client.broadcast.in(room).emit('send-audio', newData)
 			// client.broadcast.emit('send-audio', newData)
-			// Object.entries(this.connectedPlayers).forEach(([key, clientStatus]) => {
+			// Object.entries(this.connectedUsers).forEach(([key, clientStatus]) => {
 			//   if (
 			//     key !== client.id &&
 			//     !clientStatus?.mute &&
-			//     clientStatus.room === this.connectedPlayers[client.id]?.room
+			//     clientStatus.room === this.connectedUsers[client.id]?.room
 			//   ) {
 			//     client.to(key).emit('send-audio', newData)
 			//   }
 			// })
 		})
 
-		// Update the client information by the newly sent data
-		client.on('player-information', async (data: PlayerStatusType) => {
+		// Update the client information with the newly sent data
+		client.on('user-information', async (data: UserStatusType) => {
 			this.logger.debug({ data })
-			this.connectedPlayers[client.id] = data
+			this.connectedUsers[client.id] = data
 			await client.join(data.room)
 
-			this.websocketService.socket.to(data.room).emit('update-players', this.returnPlayersInTheRoom(data.room))
+			this.websocketService.socket.to(data.room).emit('update-users', this.returnUsersInTheRoom(data.room))
 		})
 
 		client.on('leave-room', async (room: string) => {
 			await client.leave(room)
-			this.websocketService.socket.to(room).emit('remove-player', this.returnPlayersInARoomWithPlayerRemoved(client.id))
+			this.websocketService.socket.to(room).emit('remove-user', this.returnUsersInARoomWithUserRemoved(client.id))
 		})
 	}
 
 	handleDisconnect(client: Socket<DefaultEventsMap, DefaultEventsMap>) {
 		this.logger.verbose(`Disconnected Device: ${client.id}`)
-		if (this.connectedPlayers[client.id]?.room) {
-			this.websocketService.socket.to(this.connectedPlayers[client.id].room).emit('remove-player', this.returnPlayersInARoomWithPlayerRemoved(client.id))
+		if (this.connectedUsers[client.id]?.room) {
+			this.websocketService.socket.to(this.connectedUsers[client.id].room).emit('remove-user', this.returnUsersInARoomWithUserRemoved(client.id))
 		}
-		// Clean up the client from the connected players map to prevent memory leaks
-		delete this.connectedPlayers[client.id]
+		// Clean up the client from the connected users map to prevent memory leaks
+		delete this.connectedUsers[client.id]
 	}
 
-	private returnPlayersInTheRoom(room: string) {
+	private returnUsersInTheRoom(room: string) {
 		const result = {}
 
-		Object.entries(this.connectedPlayers).forEach(([key, playerStatus]) => {
-			if (playerStatus.room === room) {
-				result[key] = playerStatus
+		Object.entries(this.connectedUsers).forEach(([key, userStatus]) => {
+			if (userStatus.room === room) {
+				result[key] = userStatus
 			}
 		})
 
 		return result
 	}
 
-	private returnPlayersInARoomWithPlayerRemoved(playerId: string) {
+	private returnUsersInARoomWithUserRemoved(userId: string) {
 		const result = {}
-		const room = this.connectedPlayers[playerId]?.room
+		const room = this.connectedUsers[userId]?.room
 
 		if (room) {
-			Object.entries(this.connectedPlayers).forEach(([key, playerStatus]) => {
-				if (playerStatus.room === room && key !== playerId) {
-					result[key] = playerStatus
+			Object.entries(this.connectedUsers).forEach(([key, userStatus]) => {
+				if (userStatus.room === room && key !== userId) {
+					result[key] = userStatus
 				}
 			})
 		}

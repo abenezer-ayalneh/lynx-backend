@@ -12,7 +12,7 @@ export default class GameService {
 		this.logger = new Logger('GameService')
 	}
 
-	async create(createGameDto: CreateGameDto, ownerId: number) {
+	async create(createGameDto: CreateGameDto, ownerId: string) {
 		// Choose random words(their IDs) from the total
 		// const words = await this.getWords(lastWord.id, TOTAL_GAME_ROUNDS)
 		const randomWordIds = await this.prismaService.$queryRawUnsafe<{ id: number }[]>(`SELECT id
@@ -24,59 +24,59 @@ export default class GameService {
 		return this.prismaService.game.create({
 			data: {
 				type: createGameDto.type,
-				Owner: {
+				owner: {
 					connect: { id: ownerId },
 				},
-				Words: {
+				words: {
 					connect: randomWordIds,
 				},
-				ScheduledGame: {
+				scheduledGame: {
 					connect: createGameDto.scheduledGameId ? { id: createGameDto.scheduledGameId } : undefined,
 				},
 			},
 			select: {
 				id: true,
 				type: true,
-				created_at: true,
+				createdAt: true,
 			},
 		})
 	}
 
 	findAll() {
 		return this.prismaService.game.findMany({
-			where: { status: true, deleted_at: null },
+			where: { status: true, deletedAt: null },
 			select: {
 				id: true,
 				type: true,
-				created_at: true,
+				createdAt: true,
 			},
 		})
 	}
 
 	findOne(id: number) {
 		return this.prismaService.game.findUnique({
-			where: { id, deleted_at: null },
+			where: { id, deletedAt: null },
 			select: {
 				id: true,
-				owner_id: true,
+				ownerId: true,
 				type: true,
-				created_at: true,
+				createdAt: true,
 			},
 		})
 	}
 
 	findFirstByScheduledGameId(id: string) {
 		return this.prismaService.game.findFirst({
-			where: { scheduled_game_id: id },
-			orderBy: { created_at: 'desc' },
-			include: { Words: true },
+			where: { scheduledGameId: id },
+			orderBy: { createdAt: 'desc' },
+			include: { words: true },
 		})
 	}
 
 	remove(id: number) {
 		return this.prismaService.game.update({
 			where: { id },
-			data: { deleted_at: new Date(), status: false },
+			data: { deletedAt: new Date(), status: false },
 		})
 	}
 

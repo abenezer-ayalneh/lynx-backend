@@ -1,5 +1,8 @@
+import { IncomingMessage } from 'node:http'
+
 import { Injectable, Logger } from '@nestjs/common'
-import { JwtService } from '@nestjs/jwt'
+import { UserSession } from '@thallesp/nestjs-better-auth'
+import { fromNodeHeaders } from 'better-auth/node'
 import { Client, Delayed, Room } from 'colyseus'
 
 import {
@@ -10,6 +13,7 @@ import {
 	START_COUNTDOWN,
 	THIRD_CYCLE_TIME,
 } from '../../commons/constants/game-time.constant'
+import { auth } from '../../lib/auth'
 import PrismaService from '../../prisma/prisma.service'
 import { GUESS, WRONG_GUESS } from './constants/message.constant'
 import { FIRST_CYCLE_SCORE, FOURTH_CYCLE_SCORE, SECOND_CYCLE_SCORE, THIRD_CYCLE_SCORE } from './constants/score.constant'
@@ -36,18 +40,22 @@ export default class SoloRoom extends Room<SoloRoomState> {
 	/**
 	 * Validate client auth token before joining/creating the room
 	 * @param token
+	 * @param req
 	 */
-	static async onAuth(token: string) {
+	static async onAuth(token: string, req: IncomingMessage) {
 		if (!token) {
 			return false
 		}
 
-		const jwtService = new JwtService()
-		return await jwtService.verifyAsync<object>(token, {
-			secret: process.env.JWT_SECRET,
-			audience: process.env.JWT_TOKEN_AUDIENCE,
-			issuer: process.env.JWT_TOKEN_ISSUER,
-		})
+		const session = await auth.api.getSession({ headers: fromNodeHeaders(req.headers) })
+
+		return session.user
+		// const jwtService = new JwtService()
+		// return await jwtService.verifyAsync<object>(token, {
+		// 	secret: process.env.JWT_SECRET,
+		// 	audience: process.env.JWT_TOKEN_AUDIENCE,
+		// 	issuer: process.env.JWT_TOKEN_ISSUER,
+		// })
 	}
 
 	/**
@@ -58,9 +66,9 @@ export default class SoloRoom extends Room<SoloRoomState> {
 		// Create the solo game state
 		await this.createSoloGameState(data)
 
-		// Set the player's ID into the state variable for later use. But it is not
+		// Set the user's ID into the state variable for later use. But it is not
 		// sent via state update to the frontend
-		this.state.playerId = data.playerId
+		this.state.userId = data.userId
 
 		// Start game preparation countdown
 		this.createCountdown(START_COUNTDOWN)
@@ -69,33 +77,33 @@ export default class SoloRoom extends Room<SoloRoomState> {
 	}
 
 	/**
-	 * Handle all the necessary steps when a player wins a round
+	 * Handle all the necessary steps when a user wins a round
 	 */
 	handleGameWon(sessionId: string) {
-		let playerScore: number
+		let userScore: number
 		switch (this.state.cycle) {
 			case 1:
-				playerScore = FIRST_CYCLE_SCORE
+				userScore = FIRST_CYCLE_SCORE
 				break
 			case 2:
-				playerScore = SECOND_CYCLE_SCORE
+				userScore = SECOND_CYCLE_SCORE
 				break
 			case 3:
-				playerScore = THIRD_CYCLE_SCORE
+				userScore = THIRD_CYCLE_SCORE
 				break
 			case 4:
-				playerScore = FOURTH_CYCLE_SCORE
+				userScore = FOURTH_CYCLE_SCORE
 				break
 			default:
-				playerScore = 0
+				userScore = 0
 		}
 
-		this.state.totalScore += playerScore
-		this.state.score = playerScore
+		this.state.totalScore += userScore
+		this.state.score = userScore
 		this.state.winner = new Score({
 			id: sessionId,
-			name: 'Player Name',
-			score: playerScore,
+			name: 'User Name',
+			score: userScore,
 		})
 		this.stopCurrentRoundOrGame()
 	}
@@ -104,9 +112,9 @@ export default class SoloRoom extends Room<SoloRoomState> {
 		// Set the randomly selected word to the state object's `word` attribute
 		const game = await this.prismaService.game.findUnique({
 			where: { id: data.gameId },
-			select: { Words: true },
+			select: { words: true },
 		})
-		const words = game.Words.map((word) => new Word(word))
+		const words = game.words.map((word) => new Word(word))
 		// const randomWord = await this.pickRandomWord()
 
 		// Create a RoomState object
@@ -114,7 +122,7 @@ export default class SoloRoom extends Room<SoloRoomState> {
 			word: undefined,
 			guessing: false,
 			round: 0,
-			totalRound: game.Words.length,
+			totalRound: game.words.length,
 			time: FIRST_CYCLE_TIME,
 			cycle: 1,
 			waitingCountdownTime: START_COUNTDOWN,
@@ -229,13 +237,9 @@ export default class SoloRoom extends Room<SoloRoomState> {
 	}
 
 	// When client successfully join the room
-	async onJoin(client: Client, options: any, auth: { sub: number }) {
-		const player = await this.prismaService.player.findUnique({
-			where: { id: auth.sub },
-		})
-
-		if (player) {
-			this.state.playerId = player.id
+	onJoin(client: Client, options: any, auth: UserSession) {
+		if (auth.user?.id) {
+			this.state.userId = auth.user.id
 		}
 	}
 
@@ -290,15 +294,15 @@ export default class SoloRoom extends Room<SoloRoomState> {
 					this.state.time = 0
 					this.state.word = undefined
 					this.waitingCountdownInterval.clear()
-					await this.setPlayerScoreOnDatabase(this.state.totalScore)
+					await this.setUserScoreOnDatabase(this.state.totalScore)
 				}
 			}, 1000)
 		}
 	}
 
-	private async setPlayerScoreOnDatabase(score: number) {
-		await this.prismaService.player.update({
-			where: { id: this.state.playerId },
+	private async setUserScoreOnDatabase(score: number) {
+		await this.prismaService.user.update({
+			where: { id: this.state.userId },
 			data: { score: { increment: score } },
 		})
 	}

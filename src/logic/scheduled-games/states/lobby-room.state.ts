@@ -9,7 +9,7 @@ export default class LobbyRoomState extends Schema {
 
 	@type('number') ownerId: number
 
-	@type({ map: 'string' }) playerNames = new MapSchema<string>()
+	@type({ map: 'string' }) userNames = new MapSchema<string>()
 
 	constructor({ gameId, startTime, ownerId }: LobbyRoomProps) {
 		super()
