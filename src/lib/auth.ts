@@ -3,7 +3,16 @@ import { betterAuth } from 'better-auth'
 import { prismaAdapter } from 'better-auth/adapters/prisma'
 import { admin } from 'better-auth/plugins'
 
+import SendMailDto from '../mail/dto/mail.dto'
+
 const prisma = new PrismaClient()
+
+let sendMailFn: ((dto: SendMailDto) => Promise<any>) | null = null
+
+export function registerMailSender(fn: (dto: SendMailDto) => Promise<any>) {
+	sendMailFn = fn
+}
+
 export const auth = betterAuth({
 	database: prismaAdapter(prisma, {
 		provider: 'postgresql',
@@ -12,6 +21,23 @@ export const auth = betterAuth({
 	plugins: [admin()],
 	emailAndPassword: {
 		enabled: true,
+		sendResetPassword: async ({ user, url }) => {
+			if (!sendMailFn) {
+				console.error('Mail sender not registered — cannot send password reset email')
+				return
+			}
+
+			await sendMailFn({
+				to: [user.email],
+				from: process.env.MAIL_FROM || '"No Reply" <lynxman.gamer@gmail.com>',
+				subject: 'Reset Your Lynx Password',
+				template: './reset-password',
+				context: {
+					name: user.name,
+					resetLink: url,
+				},
+			})
+		},
 	},
 	user: {
 		additionalFields: {

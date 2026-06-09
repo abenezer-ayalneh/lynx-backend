@@ -12,10 +12,11 @@ import * as basicAuth from 'express-basic-auth'
 import { WinstonModule } from 'nest-winston'
 
 import AppModule from './app.module'
-import { auth } from './lib/auth'
+import { auth, registerMailSender } from './lib/auth'
 import LogicService from './logic/logic.service'
 import MultiplayerRoom from './logic/scheduled-games/multiplayer.room'
 import SoloRoom from './logic/scheduled-games/solo.room'
+import MailService from './mail/mail.service'
 import ValidationException from './utils/exceptions/validation.exception'
 import winstonLoggerInstance from './utils/log/winston.log'
 
@@ -68,6 +69,10 @@ async function bootstrap() {
 		challenge: true,
 	})
 	app.use('/monitor', basicAuthMiddleware, monitor())
+
+	// Register mail sender for better-auth password reset emails
+	const mailService = app.get(MailService)
+	registerMailSender((dto) => mailService.sendMail(dto))
 
 	// Config service to access .env file
 	const configService = app.get(ConfigService)
